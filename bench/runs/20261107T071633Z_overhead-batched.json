@@ -1,0 +1,65 @@
+{
+  "setup": {
+    "name": "overhead-batched",
+    "description": "zero-latency mock, batched set-based reports",
+    "workers": 4,
+    "concurrency_per_worker": 32,
+    "cases": 100000,
+    "unique_payloads": 0,
+    "job_type": "mock",
+    "executor_config": {},
+    "max_attempts": 3,
+    "lease": "15s",
+    "passes": [
+      "cold"
+    ],
+    "batch_reports": true,
+    "host": {
+      "cpu_model": "Intel(R) Xeon(R) Processor @ 2.30GHz",
+      "logical_cpus": 4,
+      "mem_gb": 15,
+      "os": "linux/amd64",
+      "go_version": "go1.26.0",
+      "postgres": "16.15",
+      "topology": "single host: 1 coordinator process + N worker processes over loopback gRPC; Postgres 16 in a Docker container on the same host"
+    },
+    "git_commit": "d65dfe6",
+    "git_dirty": false,
+    "started_at": "2026-11-07T07:16:33.426507643Z"
+  },
+  "passes": [
+    {
+      "label": "cold",
+      "submit": {
+        "run_id": "694bc105-4aa5-41a3-ac64-53d91e29f133",
+        "jobs": 100000
+      },
+      "stats": {
+        "RunID": "694bc105-4aa5-41a3-ac64-53d91e29f133",
+        "Suite": "overhead-batched/cold",
+        "Total": 100000,
+        "Queued": 0,
+        "Leased": 0,
+        "Waiting": 0,
+        "Succeeded": 100000,
+        "Cached": 0,
+        "Failed": 0,
+        "Retries": 0,
+        "LeaseExpirations": 0,
+        "ExecutorCalls": 100000,
+        "WallSeconds": 11.308888,
+        "JobsPerMinute": 530556.1430973585,
+        "AttemptP50MS": 22.175,
+        "AttemptP95MS": 40.45404999999999,
+        "AttemptP99MS": 49.39503999999998,
+        "ExecP50MS": 0.007,
+        "ExecP95MS": 0.031,
+        "OverheadP50MS": 22.153,
+        "OverheadP95MS": 40.43504999999999,
+        "MeanScore": 0.500641503000005,
+        "PassRate": 0.5032,
+        "CacheSaved": 0
+      }
+    }
+  ]
+}

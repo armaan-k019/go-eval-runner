@@ -1,0 +1,68 @@
+{
+  "setup": {
+    "name": "scaling-w2",
+    "description": "lognormal latency median 250ms sigma 0.5, 16 slots per worker",
+    "workers": 2,
+    "concurrency_per_worker": 16,
+    "cases": 6000,
+    "unique_payloads": 0,
+    "job_type": "mock",
+    "executor_config": {
+      "latency_median_ms": 250,
+      "latency_sigma": 0.5
+    },
+    "max_attempts": 3,
+    "lease": "15s",
+    "passes": [
+      "cold"
+    ],
+    "batch_reports": true,
+    "host": {
+      "cpu_model": "Intel(R) Xeon(R) Processor @ 2.30GHz",
+      "logical_cpus": 4,
+      "mem_gb": 15,
+      "os": "linux/amd64",
+      "go_version": "go1.26.0",
+      "postgres": "16.15",
+      "topology": "single host: 1 coordinator process + N worker processes over loopback gRPC; Postgres 16 in a Docker container on the same host"
+    },
+    "git_commit": "d65dfe6",
+    "git_dirty": false,
+    "started_at": "2026-11-07T07:19:26.378377914Z"
+  },
+  "passes": [
+    {
+      "label": "cold",
+      "submit": {
+        "run_id": "a7112aba-54e3-4cc3-b916-ab81cca9412f",
+        "jobs": 6000
+      },
+      "stats": {
+        "RunID": "a7112aba-54e3-4cc3-b916-ab81cca9412f",
+        "Suite": "scaling-w2/cold",
+        "Total": 6000,
+        "Queued": 0,
+        "Leased": 0,
+        "Waiting": 0,
+        "Succeeded": 6000,
+        "Cached": 0,
+        "Failed": 0,
+        "Retries": 0,
+        "LeaseExpirations": 0,
+        "ExecutorCalls": 6000,
+        "WallSeconds": 54.84507,
+        "JobsPerMinute": 6563.9445806159065,
+        "AttemptP50MS": 252.5135,
+        "AttemptP95MS": 582.8585000000002,
+        "AttemptP99MS": 820.7806300000005,
+        "ExecP50MS": 250.41199999999998,
+        "ExecP95MS": 580.0498500000002,
+        "OverheadP50MS": 1.8575,
+        "OverheadP95MS": 3.217300000000001,
+        "MeanScore": 0.4970472833333335,
+        "PassRate": 0.48883333333333334,
+        "CacheSaved": 0
+      }
+    }
+  ]
+}

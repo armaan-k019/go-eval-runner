@@ -1,0 +1,138 @@
+{
+  "setup": {
+    "name": "trial",
+    "description": "",
+    "workers": 2,
+    "concurrency_per_worker": 8,
+    "cases": 300,
+    "unique_payloads": 250,
+    "job_type": "mock",
+    "executor_config": {
+      "latency_median_ms": 20
+    },
+    "max_attempts": 3,
+    "lease": "15s",
+    "passes": [
+      "cold",
+      "warm (identical rerun)",
+      "rerun with 10% of cases changed"
+    ],
+    "host": {
+      "cpu_model": "Intel(R) Xeon(R) Processor @ 2.30GHz",
+      "logical_cpus": 4,
+      "mem_gb": 15,
+      "os": "linux/amd64",
+      "go_version": "go1.26.0",
+      "postgres": "16.15",
+      "topology": "single host: 1 coordinator process + N worker processes over loopback gRPC, Postgres 16 in Docker on the same host"
+    },
+    "git_commit": "e0ce17c",
+    "git_dirty": false,
+    "started_at": "2026-11-07T07:08:28.729680888Z"
+  },
+  "passes": [
+    {
+      "label": "cold",
+      "submit": {
+        "run_id": "dc23c755-6ac3-472c-8e88-97a9918b661a",
+        "jobs": 300,
+        "deduped": 50
+      },
+      "stats": {
+        "RunID": "dc23c755-6ac3-472c-8e88-97a9918b661a",
+        "Suite": "trial/cold",
+        "Total": 300,
+        "Queued": 0,
+        "Leased": 0,
+        "Waiting": 0,
+        "Succeeded": 250,
+        "Cached": 50,
+        "Failed": 0,
+        "Retries": 0,
+        "LeaseExpirations": 0,
+        "ExecutorCalls": 250,
+        "WallSeconds": 0.465996,
+        "JobsPerMinute": 38626.94100378544,
+        "AttemptP50MS": 23.490499999999997,
+        "AttemptP95MS": 45.18364999999999,
+        "AttemptP99MS": 58.80827999999999,
+        "ExecP50MS": 20.4745,
+        "ExecP95MS": 21.071,
+        "OverheadP50MS": 2.965,
+        "OverheadP95MS": 24.687699999999996,
+        "MeanScore": 0.48759966666666654,
+        "PassRate": 0.48333333333333334,
+        "CacheSaved": 0.16666666666666666
+      }
+    },
+    {
+      "label": "warm (identical rerun)",
+      "submit": {
+        "run_id": "e6b15815-f115-4192-80b1-ae8296f6dd30",
+        "jobs": 300,
+        "cache_hits": 300
+      },
+      "stats": {
+        "RunID": "e6b15815-f115-4192-80b1-ae8296f6dd30",
+        "Suite": "trial/warm (identical rerun)",
+        "Total": 300,
+        "Queued": 0,
+        "Leased": 0,
+        "Waiting": 0,
+        "Succeeded": 0,
+        "Cached": 300,
+        "Failed": 0,
+        "Retries": 0,
+        "LeaseExpirations": 0,
+        "ExecutorCalls": 0,
+        "WallSeconds": 0.002533,
+        "JobsPerMinute": 7106198.183971575,
+        "AttemptP50MS": 0,
+        "AttemptP95MS": 0,
+        "AttemptP99MS": 0,
+        "ExecP50MS": 0,
+        "ExecP95MS": 0,
+        "OverheadP50MS": 0,
+        "OverheadP95MS": 0,
+        "MeanScore": 0.48759966666666676,
+        "PassRate": 0.48333333333333334,
+        "CacheSaved": 1
+      }
+    },
+    {
+      "label": "rerun with 10% of cases changed",
+      "submit": {
+        "run_id": "4865e597-e4f2-40d4-b588-6803bb370dcd",
+        "jobs": 300,
+        "cache_hits": 272,
+        "deduped": 1
+      },
+      "stats": {
+        "RunID": "4865e597-e4f2-40d4-b588-6803bb370dcd",
+        "Suite": "trial/rerun with 10% of cases changed",
+        "Total": 300,
+        "Queued": 0,
+        "Leased": 0,
+        "Waiting": 0,
+        "Succeeded": 27,
+        "Cached": 273,
+        "Failed": 0,
+        "Retries": 0,
+        "LeaseExpirations": 0,
+        "ExecutorCalls": 27,
+        "WallSeconds": 0.069861,
+        "JobsPerMinute": 257654.48533516552,
+        "AttemptP50MS": 25.031,
+        "AttemptP95MS": 27.2784,
+        "AttemptP99MS": 27.72026,
+        "ExecP50MS": 20.335,
+        "ExecP95MS": 21.022,
+        "OverheadP50MS": 4.535,
+        "OverheadP95MS": 6.865799999999999,
+        "MeanScore": 0.4794690000000002,
+        "PassRate": 0.47333333333333333,
+        "CacheSaved": 0.91
+      }
+    }
+  ]
+}

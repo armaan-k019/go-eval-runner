@@ -1,0 +1,70 @@
+{
+  "setup": {
+    "name": "crash",
+    "description": "SIGKILL 1 of 4 workers 5s into the run, 3s lease",
+    "workers": 4,
+    "concurrency_per_worker": 16,
+    "cases": 8000,
+    "unique_payloads": 0,
+    "job_type": "mock",
+    "executor_config": {
+      "latency_median_ms": 100,
+      "latency_sigma": 0.5
+    },
+    "max_attempts": 3,
+    "lease": "3s",
+    "kill_worker_after": "5s",
+    "passes": [
+      "cold"
+    ],
+    "batch_reports": true,
+    "host": {
+      "cpu_model": "Intel(R) Xeon(R) Processor @ 2.30GHz",
+      "logical_cpus": 4,
+      "mem_gb": 15,
+      "os": "linux/amd64",
+      "go_version": "go1.26.0",
+      "postgres": "16.15",
+      "topology": "single host: 1 coordinator process + N worker processes over loopback gRPC; Postgres 16 in a Docker container on the same host"
+    },
+    "git_commit": "d65dfe6",
+    "git_dirty": false,
+    "started_at": "2026-11-07T07:21:30.877465853Z"
+  },
+  "passes": [
+    {
+      "label": "cold",
+      "submit": {
+        "run_id": "73d452e7-b28f-4173-8924-74dcbfd713fb",
+        "jobs": 8000
+      },
+      "stats": {
+        "RunID": "73d452e7-b28f-4173-8924-74dcbfd713fb",
+        "Suite": "crash/cold",
+        "Total": 8000,
+        "Queued": 0,
+        "Leased": 0,
+        "Waiting": 0,
+        "Succeeded": 8000,
+        "Cached": 0,
+        "Failed": 0,
+        "Retries": 17,
+        "LeaseExpirations": 17,
+        "ExecutorCalls": 8017,
+        "WallSeconds": 18.183579,
+        "JobsPerMinute": 26397.44353958041,
+        "AttemptP50MS": 103.1585,
+        "AttemptP95MS": 231.5672,
+        "AttemptP99MS": 336.02518000000026,
+        "ExecP50MS": 100.167,
+        "ExecP95MS": 228.63709999999998,
+        "OverheadP50MS": 2.6254999999999997,
+        "OverheadP95MS": 5.503149999999998,
+        "MeanScore": 0.5009742125000008,
+        "PassRate": 0.500375,
+        "CacheSaved": 0
+      },
+      "killed_worker_pid": 28303
+    }
+  ]
+}

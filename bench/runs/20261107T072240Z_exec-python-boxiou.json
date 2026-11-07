@@ -1,0 +1,106 @@
+{
+  "setup": {
+    "name": "exec-python-boxiou",
+    "description": "exec executor: one python3 process per case (stdlib box IoU), then warm rerun",
+    "workers": 2,
+    "concurrency_per_worker": 8,
+    "cases": 500,
+    "unique_payloads": 0,
+    "job_type": "exec",
+    "executor_config": {
+      "command": [
+        "python3",
+        "examples/exec-python/box_iou_case.py"
+      ]
+    },
+    "max_attempts": 3,
+    "lease": "15s",
+    "passes": [
+      "cold",
+      "warm (identical rerun)"
+    ],
+    "cases_file": "examples/exec-python/cases.jsonl",
+    "batch_reports": true,
+    "host": {
+      "cpu_model": "Intel(R) Xeon(R) Processor @ 2.30GHz",
+      "logical_cpus": 4,
+      "mem_gb": 15,
+      "os": "linux/amd64",
+      "go_version": "go1.26.0",
+      "postgres": "16.15",
+      "topology": "single host: 1 coordinator process + N worker processes over loopback gRPC; Postgres 16 in a Docker container on the same host"
+    },
+    "git_commit": "d65dfe6",
+    "git_dirty": true,
+    "started_at": "2026-11-07T07:22:40.768094842Z"
+  },
+  "passes": [
+    {
+      "label": "cold",
+      "submit": {
+        "run_id": "2b0ad7cf-df19-44f9-bff2-116ecc7f354a",
+        "jobs": 500
+      },
+      "stats": {
+        "RunID": "2b0ad7cf-df19-44f9-bff2-116ecc7f354a",
+        "Suite": "exec-python-boxiou/cold",
+        "Total": 500,
+        "Queued": 0,
+        "Leased": 0,
+        "Waiting": 0,
+        "Succeeded": 500,
+        "Cached": 0,
+        "Failed": 0,
+        "Retries": 0,
+        "LeaseExpirations": 0,
+        "ExecutorCalls": 500,
+        "WallSeconds": 3.007287,
+        "JobsPerMinute": 9975.768857445266,
+        "AttemptP50MS": 95.578,
+        "AttemptP95MS": 180.57014999999984,
+        "AttemptP99MS": 217.23068999999998,
+        "ExecP50MS": 81.385,
+        "ExecP95MS": 160.36579999999998,
+        "OverheadP50MS": 10.902000000000001,
+        "OverheadP95MS": 44.13339999999992,
+        "MeanScore": 0.8457916640522196,
+        "PassRate": 0.198,
+        "CacheSaved": 0
+      }
+    },
+    {
+      "label": "warm (identical rerun)",
+      "submit": {
+        "run_id": "14192004-0240-46d0-aa6e-33784d2d733a",
+        "jobs": 500,
+        "cache_hits": 500
+      },
+      "stats": {
+        "RunID": "14192004-0240-46d0-aa6e-33784d2d733a",
+        "Suite": "exec-python-boxiou/warm (identical rerun)",
+        "Total": 500,
+        "Queued": 0,
+        "Leased": 0,
+        "Waiting": 0,
+        "Succeeded": 0,
+        "Cached": 500,
+        "Failed": 0,
+        "Retries": 0,
+        "LeaseExpirations": 0,
+        "ExecutorCalls": 0,
+        "WallSeconds": 0.002192,
+        "JobsPerMinute": 13686131.386861315,
+        "AttemptP50MS": 0,
+        "AttemptP95MS": 0,
+        "AttemptP99MS": 0,
+        "ExecP50MS": 0,
+        "ExecP95MS": 0,
+        "OverheadP50MS": 0,
+        "OverheadP95MS": 0,
+        "MeanScore": 0.8457916640522193,
+        "PassRate": 0.198,
+        "CacheSaved": 1
+      }
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "setup": {
+    "name": "cache",
+    "description": "30% duplicate payloads, then warm rerun, then 10% changed",
+    "workers": 4,
+    "concurrency_per_worker": 16,
+    "cases": 5000,
+    "unique_payloads": 3500,
+    "job_type": "mock",
+    "executor_config": {
+      "latency_median_ms": 100,
+      "latency_sigma": 0.5
+    },
+    "max_attempts": 3,
+    "lease": "15s",
+    "passes": [
+      "cold",
+      "warm (identical rerun)",
+      "rerun with 10% of cases changed"
+    ],
+    "batch_reports": true,
+    "host": {
+      "cpu_model": "Intel(R) Xeon(R) Processor @ 2.30GHz",
+      "logical_cpus": 4,
+      "mem_gb": 15,
+      "os": "linux/amd64",
+      "go_version": "go1.26.0",
+      "postgres": "16.15",
+      "topology": "single host: 1 coordinator process + N worker processes over loopback gRPC; Postgres 16 in a Docker container on the same host"
+    },
+    "git_commit": "d65dfe6",
+    "git_dirty": false,
+    "started_at": "2026-11-07T07:21:08.026163937Z"
+  },
+  "passes": [
+    {
+      "label": "cold",
+      "submit": {
+        "run_id": "1b9e38c3-21bf-4d7e-bf8e-7a3d37785649",
+        "jobs": 5000,
+        "deduped": 1500
+      },
+      "stats": {
+        "RunID": "1b9e38c3-21bf-4d7e-bf8e-7a3d37785649",
+        "Suite": "cache/cold",
+        "Total": 5000,
+        "Queued": 0,
+        "Leased": 0,
+        "Waiting": 0,
+        "Succeeded": 3500,
+        "Cached": 1500,
+        "Failed": 0,
+        "Retries": 0,
+        "LeaseExpirations": 0,
+        "ExecutorCalls": 3500,
+        "WallSeconds": 6.558948,
+        "JobsPerMinute": 45739.042297636755,
+        "AttemptP50MS": 101.27000000000001,
+        "AttemptP95MS": 222.80444999999997,
+        "AttemptP99MS": 316.0991499999993,
+        "ExecP50MS": 98.394,
+        "ExecP95MS": 220.08884999999998,
+        "OverheadP50MS": 2.169,
+        "OverheadP95MS": 5.707899999999995,
+        "MeanScore": 0.5045239400000001,
+        "PassRate": 0.4984,
+        "CacheSaved": 0.3
+      }
+    },
+    {
+      "label": "warm (identical rerun)",
+      "submit": {
+        "run_id": "203801e8-e77a-47ac-aece-9d10688e09ad",
+        "jobs": 5000,
+        "cache_hits": 5000
+      },
+      "stats": {
+        "RunID": "203801e8-e77a-47ac-aece-9d10688e09ad",
+        "Suite": "cache/warm (identical rerun)",
+        "Total": 5000,
+        "Queued": 0,
+        "Leased": 0,
+        "Waiting": 0,
+        "Succeeded": 0,
+        "Cached": 5000,
+        "Failed": 0,
+        "Retries": 0,
+        "LeaseExpirations": 0,
+        "ExecutorCalls": 0,
+        "WallSeconds": 0.016079,
+        "JobsPerMinute": 18657876.733627714,
+        "AttemptP50MS": 0,
+        "AttemptP95MS": 0,
+        "AttemptP99MS": 0,
+        "ExecP50MS": 0,
+        "ExecP95MS": 0,
+        "OverheadP50MS": 0,
+        "OverheadP95MS": 0,
+        "MeanScore": 0.5045239399999998,
+        "PassRate": 0.4984,
+        "CacheSaved": 1
+      }
+    },
+    {
+      "label": "rerun with 10% of cases changed",
+      "submit": {
+        "run_id": "cdbb4c27-e687-47b6-9f93-f454d9e1e820",
+        "jobs": 5000,
+        "cache_hits": 4514,
+        "deduped": 12
+      },
+      "stats": {
+        "RunID": "cdbb4c27-e687-47b6-9f93-f454d9e1e820",
+        "Suite": "cache/rerun with 10% of cases changed",
+        "Total": 5000,
+        "Queued": 0,
+        "Leased": 0,
+        "Waiting": 0,
+        "Succeeded": 474,
+        "Cached": 4526,
+        "Failed": 0,
+        "Retries": 0,
+        "LeaseExpirations": 0,
+        "ExecutorCalls": 474,
+        "WallSeconds": 1.2798180000000001,
+        "JobsPerMinute": 234408.32993441253,
+        "AttemptP50MS": 105.03999999999999,
+        "AttemptP95MS": 245.96564999999995,
+        "AttemptP99MS": 315.7181599999999,
+        "ExecP50MS": 101.57849999999999,
+        "ExecP95MS": 243.41985,
+        "OverheadP50MS": 2.7794999999999996,
+        "OverheadP95MS": 5.974149999999999,
+        "MeanScore": 0.5028048399999996,
+        "PassRate": 0.495,
+        "CacheSaved": 0.9052
+      }
+    }
+  ]
+}

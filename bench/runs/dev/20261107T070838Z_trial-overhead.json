@@ -1,0 +1,64 @@
+{
+  "setup": {
+    "name": "trial-overhead",
+    "description": "",
+    "workers": 4,
+    "concurrency_per_worker": 32,
+    "cases": 20000,
+    "unique_payloads": 0,
+    "job_type": "mock",
+    "executor_config": {},
+    "max_attempts": 3,
+    "lease": "15s",
+    "passes": [
+      "cold"
+    ],
+    "host": {
+      "cpu_model": "Intel(R) Xeon(R) Processor @ 2.30GHz",
+      "logical_cpus": 4,
+      "mem_gb": 15,
+      "os": "linux/amd64",
+      "go_version": "go1.26.0",
+      "postgres": "16.15",
+      "topology": "single host: 1 coordinator process + N worker processes over loopback gRPC, Postgres 16 in Docker on the same host"
+    },
+    "git_commit": "e0ce17c",
+    "git_dirty": false,
+    "started_at": "2026-11-07T07:08:38.666601845Z"
+  },
+  "passes": [
+    {
+      "label": "cold",
+      "submit": {
+        "run_id": "eeeb8674-9252-4781-8afa-287b7426cc5c",
+        "jobs": 20000
+      },
+      "stats": {
+        "RunID": "eeeb8674-9252-4781-8afa-287b7426cc5c",
+        "Suite": "trial-overhead/cold",
+        "Total": 20000,
+        "Queued": 0,
+        "Leased": 0,
+        "Waiting": 0,
+        "Succeeded": 20000,
+        "Cached": 0,
+        "Failed": 0,
+        "Retries": 0,
+        "LeaseExpirations": 0,
+        "ExecutorCalls": 20000,
+        "WallSeconds": 8.228403,
+        "JobsPerMinute": 145836.318420476,
+        "AttemptP50MS": 22.003500000000003,
+        "AttemptP95MS": 37.976099999999995,
+        "AttemptP99MS": 48.29455999999975,
+        "ExecP50MS": 0.008,
+        "ExecP95MS": 0.061,
+        "OverheadP50MS": 21.963,
+        "OverheadP95MS": 37.8841,
+        "MeanScore": 0.49987209499999735,
+        "PassRate": 0.49855,
+        "CacheSaved": 0
+      }
+    }
+  ]
+}
