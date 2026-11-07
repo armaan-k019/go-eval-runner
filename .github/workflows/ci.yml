@@ -1,0 +1,29 @@
+name: ci
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: eval
+          POSTGRES_PASSWORD: eval
+          POSTGRES_DB: evaltest
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U eval" --health-interval 2s --health-retries 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go vet ./...
+      - run: test -z "$(gofmt -l .)"
+      - run: go test -race -count=1 ./...
+        env:
+          EVALRUNNER_TEST_DSN: postgres://eval:eval@localhost:5432/evaltest?sslmode=disable
+      - run: docker build -t go-eval-runner:ci .
