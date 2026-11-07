@@ -39,6 +39,9 @@ directly. Compare like with like: the `overhead-batched` / `overhead-unbatched` 
 | [20261107T072130Z](runs/20261107T072130Z_crash.json) | crash | cold | 4 x 16 | 8000 | `{"latency_median_ms":100,"latency_sigma":0.5} (SIGKILL 1 worker at 5s, lease 3s)` | 18.18 | 26397 | 103.2 | 231.6 | 228.6 | 5.50 | 0.0% | 8017 | 17 | 17 | 0 |
 | [20261107T072240Z](runs/20261107T072240Z_exec-python-boxiou.json) | exec-python-boxiou | cold | 2 x 8 | 500 | `{"command":["python3","examples/exec-python/box_iou_case.py"]}` | 3.01 | 9976 | 95.6 | 180.6 | 160.4 | 44.13 | 0.0% | 500 | 0 | 0 | 0 |
 | [20261107T072240Z](runs/20261107T072240Z_exec-python-boxiou.json) | exec-python-boxiou | warm (identical rerun) | 2 x 8 | 500 | `{"command":["python3","examples/exec-python/box_iou_case.py"]}` | 0.00 | 13686131 | 0.0 | 0.0 | 0.0 | 0.00 | 100.0% | 0 | 0 | 0 | 0 |
+| [20261107T081458Z](runs/20261107T081458Z_textcad-offline-2x2.json) | textcad-offline-2x2 | cold | 2 x 2 | 160 | `{"command":["/tmp/ttc/bin/python","-m","text_to_cad.eval_case"],"dir":"/tmp/ttcwork/repo"}` | 565.34 | 17 | 5651.0 | 22624.9 | 22622.5 | 11.43 | 0.0% | 162 | 2 | 0 | 1 |
+| [20261107T081458Z](runs/20261107T081458Z_textcad-offline-2x2.json) | textcad-offline-2x2 | warm (identical rerun) | 2 x 2 | 160 | `{"command":["/tmp/ttc/bin/python","-m","text_to_cad.eval_case"],"dir":"/tmp/ttcwork/repo"}` | 360.62 | 27 | 120022.5 | 120023.8 | 120021.3 | 2.77 | 99.4% | 3 | 2 | 0 | 1 |
+| [20261107T083026Z](runs/20261107T083026Z_textcad-offline-1x1.json) | textcad-offline-1x1 | cold | 1 x 1 | 160 | `{"command":["/tmp/ttc/bin/python","-m","text_to_cad.eval_case"],"dir":"/tmp/ttcwork/repo"}` | 1424.97 | 7 | 4844.0 | 21803.9 | 21801.2 | 3.90 | 0.0% | 162 | 2 | 0 | 1 |
 
 ## `bench/runs/dev`
 

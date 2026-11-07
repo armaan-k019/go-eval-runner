@@ -18,6 +18,7 @@ All numbers below come from `bench/run-all.sh` and are logged run by run, with f
 | Transient faults | 5,000 jobs, 10% of attempts fail, max 4 attempts | 604 retries, 4,998 succeeded, 2 failed after 4 attempts. Overhead p95 6.4 ms |
 | Worker crash | 8,000 jobs, 4 workers, SIGKILL one worker 5 s in, 3 s lease | 17 leases reclaimed and re-run, 8,000 of 8,000 succeeded, 0 lost |
 | Real processes | 500 Python box-IoU cases via `exec`, 2 workers x 8 | 9,976 jobs/min cold (one `python3` per case); identical rerun 500 of 500 from cache |
+| Text-to-CAD suite | 160 offline cases from the text-to-CAD project (CadQuery 2.8.0, CPU-bound, about 5 s each) via `exec`, 120 s timeout | 2 workers x 2 slots: 565 s wall vs 1,425 s for 1 worker x 1 slot (2.5x on 4 vCPU). 159 of 160 completed; 1 case timed out on all 3 attempts. Identical rerun: 159 of 160 from cache, only the timed-out case re-ran |
 
 Definitions. *jobs/min* counts jobs that reached a terminal state over the run's wall time (submit to last result). *Attempt latency* runs from lease grant to result report on the coordinator's clock. *Overhead* is attempt latency minus the executor time the worker measured, so it is what the runner itself adds: gRPC, worker scheduling, Postgres. *Cache saved* is jobs answered without calling an executor divided by total jobs.
 
@@ -164,7 +165,7 @@ bench/                 suite script, run records, generated RESULTS.md
 - A whole suite is sent in one `SubmitRun` message (limit raised to 256 MB). Very large suites should stream cases instead.
 - All coordination happens in SQL, so several coordinators can in principle share one database, but that is untested. Long-poll wake-ups are in-process, so a second coordinator would only see new work on its 50 ms poll.
 - Dedup of identical in-flight jobs is decided at submit time; two submits racing on the same new key can both run it. The reaper repairs any waiter whose leader vanished.
-- Not yet measured: multi-host deployment, and the text-to-CAD suite end to end (the `exec` contract is agreed and the Python example exercises the same path).
+- Not yet measured: multi-host deployment, and text-to-CAD cases that call Claude (those need an API key; only the 160 offline cases have run).
 
 ## Draft resume bullets
 

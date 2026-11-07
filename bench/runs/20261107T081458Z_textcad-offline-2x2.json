@@ -1,0 +1,108 @@
+{
+  "setup": {
+    "name": "textcad-offline-2x2",
+    "description": "text-to-CAD offline suite (160 cases, cadquery 2.8.0) via exec, then identical rerun",
+    "workers": 2,
+    "concurrency_per_worker": 2,
+    "cases": 160,
+    "unique_payloads": 0,
+    "job_type": "exec",
+    "executor_config": {
+      "command": [
+        "/tmp/ttc/bin/python",
+        "-m",
+        "text_to_cad.eval_case"
+      ],
+      "dir": "/tmp/ttcwork/repo"
+    },
+    "max_attempts": 3,
+    "lease": "15s",
+    "passes": [
+      "cold",
+      "warm (identical rerun)"
+    ],
+    "cases_file": "/tmp/ttcwork/repo/benchmark/cases.offline.jsonl",
+    "batch_reports": true,
+    "host": {
+      "cpu_model": "Intel(R) Xeon(R) Processor @ 2.30GHz",
+      "logical_cpus": 4,
+      "mem_gb": 15,
+      "os": "linux/amd64",
+      "go_version": "go1.26.0",
+      "postgres": "16.15",
+      "topology": "single host: 1 coordinator process + N worker processes over loopback gRPC; Postgres 16 in a Docker container on the same host"
+    },
+    "git_commit": "ee688a2",
+    "git_dirty": false,
+    "started_at": "2026-11-07T08:14:58.392549369Z"
+  },
+  "passes": [
+    {
+      "label": "cold",
+      "submit": {
+        "run_id": "f7b89db4-5e28-404c-9fd0-843d1df76665",
+        "jobs": 160
+      },
+      "stats": {
+        "RunID": "f7b89db4-5e28-404c-9fd0-843d1df76665",
+        "Suite": "textcad-offline-2x2/cold",
+        "Total": 160,
+        "Queued": 0,
+        "Leased": 0,
+        "Waiting": 0,
+        "Succeeded": 159,
+        "Cached": 0,
+        "Failed": 1,
+        "Retries": 2,
+        "LeaseExpirations": 0,
+        "ExecutorCalls": 162,
+        "WallSeconds": 565.337865,
+        "JobsPerMinute": 16.980995957169792,
+        "AttemptP50MS": 5651.012000000001,
+        "AttemptP95MS": 22624.947349999995,
+        "AttemptP99MS": 120023.31304,
+        "ExecP50MS": 5645.384,
+        "ExecP95MS": 22622.523149999994,
+        "OverheadP50MS": 3.2335000000000003,
+        "OverheadP95MS": 11.43094999999999,
+        "MeanScore": 0.9186971761006288,
+        "PassRate": 0.3584905660377358,
+        "CacheSaved": 0
+      }
+    },
+    {
+      "label": "warm (identical rerun)",
+      "submit": {
+        "run_id": "3afef6fb-a335-42d5-87aa-5ab7bea90def",
+        "jobs": 160,
+        "cache_hits": 159
+      },
+      "stats": {
+        "RunID": "3afef6fb-a335-42d5-87aa-5ab7bea90def",
+        "Suite": "textcad-offline-2x2/warm (identical rerun)",
+        "Total": 160,
+        "Queued": 0,
+        "Leased": 0,
+        "Waiting": 0,
+        "Succeeded": 0,
+        "Cached": 159,
+        "Failed": 1,
+        "Retries": 2,
+        "LeaseExpirations": 0,
+        "ExecutorCalls": 3,
+        "WallSeconds": 360.617955,
+        "JobsPerMinute": 26.6209706613194,
+        "AttemptP50MS": 120022.548,
+        "AttemptP95MS": 120023.844,
+        "AttemptP99MS": 120023.9592,
+        "ExecP50MS": 120020.219,
+        "ExecP95MS": 120021.3467,
+        "OverheadP50MS": 2.516,
+        "OverheadP95MS": 2.7653000000000003,
+        "MeanScore": 0.9186971761006291,
+        "PassRate": 0.3584905660377358,
+        "CacheSaved": 0.99375
+      }
+    }
+  ]
+}
