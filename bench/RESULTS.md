@@ -42,6 +42,9 @@ directly. Compare like with like: the `overhead-batched` / `overhead-unbatched` 
 | [20261107T081458Z](runs/20261107T081458Z_textcad-offline-2x2.json) | textcad-offline-2x2 | cold | 2 x 2 | 160 | `{"command":["/tmp/ttc/bin/python","-m","text_to_cad.eval_case"],"dir":"/tmp/ttcwork/repo"}` | 565.34 | 17 | 5651.0 | 22624.9 | 22622.5 | 11.43 | 0.0% | 162 | 2 | 0 | 1 |
 | [20261107T081458Z](runs/20261107T081458Z_textcad-offline-2x2.json) | textcad-offline-2x2 | warm (identical rerun) | 2 x 2 | 160 | `{"command":["/tmp/ttc/bin/python","-m","text_to_cad.eval_case"],"dir":"/tmp/ttcwork/repo"}` | 360.62 | 27 | 120022.5 | 120023.8 | 120021.3 | 2.77 | 99.4% | 3 | 2 | 0 | 1 |
 | [20261107T083026Z](runs/20261107T083026Z_textcad-offline-1x1.json) | textcad-offline-1x1 | cold | 1 x 1 | 160 | `{"command":["/tmp/ttc/bin/python","-m","text_to_cad.eval_case"],"dir":"/tmp/ttcwork/repo"}` | 1424.97 | 7 | 4844.0 | 21803.9 | 21801.2 | 3.90 | 0.0% | 162 | 2 | 0 | 1 |
+| [20261107T092104Z](runs/20261107T092104Z_textcad-v2-offline-2x2.json) | textcad-v2-offline-2x2 | cold | 2 x 2 | 160 | `{"command":["/tmp/ttc/bin/python","-m","text_to_cad.eval_case"],"dir":"/tmp/ttcwork/repo2"}` | 268.59 | 36 | 5100.5 | 13148.0 | 13139.2 | 19.03 | 0.0% | 160 | 0 | 0 | 0 |
+| [20261107T092104Z](runs/20261107T092104Z_textcad-v2-offline-2x2.json) | textcad-v2-offline-2x2 | warm (identical rerun) | 2 x 2 | 160 | `{"command":["/tmp/ttc/bin/python","-m","text_to_cad.eval_case"],"dir":"/tmp/ttcwork/repo2"}` | 0.00 | 6760563 | 0.0 | 0.0 | 0.0 | 0.00 | 100.0% | 0 | 0 | 0 | 0 |
+| [20261107T092534Z](runs/20261107T092534Z_textcad-v2-offline-1x1.json) | textcad-v2-offline-1x1 | cold | 1 x 1 | 160 | `{"command":["/tmp/ttc/bin/python","-m","text_to_cad.eval_case"],"dir":"/tmp/ttcwork/repo2"}` | 830.42 | 12 | 4308.8 | 10365.4 | 10362.0 | 3.83 | 0.0% | 160 | 0 | 0 | 0 |
 
 ## `bench/runs/dev`
 

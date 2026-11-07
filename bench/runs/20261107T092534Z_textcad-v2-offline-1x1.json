@@ -1,0 +1,73 @@
+{
+  "setup": {
+    "name": "textcad-v2-offline-1x1",
+    "description": "text-to-CAD offline suite at 85d928c, sequential baseline (1 worker, 1 slot)",
+    "workers": 1,
+    "concurrency_per_worker": 1,
+    "cases": 160,
+    "unique_payloads": 0,
+    "job_type": "exec",
+    "executor_config": {
+      "command": [
+        "/tmp/ttc/bin/python",
+        "-m",
+        "text_to_cad.eval_case"
+      ],
+      "dir": "/tmp/ttcwork/repo2"
+    },
+    "max_attempts": 3,
+    "lease": "15s",
+    "passes": [
+      "cold"
+    ],
+    "cases_file": "/tmp/ttcwork/repo2/benchmark/cases.offline.jsonl",
+    "batch_reports": true,
+    "host": {
+      "cpu_model": "Intel(R) Xeon(R) Processor @ 2.30GHz",
+      "logical_cpus": 4,
+      "mem_gb": 15,
+      "os": "linux/amd64",
+      "go_version": "go1.26.0",
+      "postgres": "16.15",
+      "topology": "single host: 1 coordinator process + N worker processes over loopback gRPC; Postgres 16 in a Docker container on the same host"
+    },
+    "git_commit": "b7a4781",
+    "git_dirty": false,
+    "started_at": "2026-11-07T09:25:34.71193196Z"
+  },
+  "passes": [
+    {
+      "label": "cold",
+      "submit": {
+        "run_id": "96f77a93-8d8d-43ea-872d-9403e1fc45cc",
+        "jobs": 160
+      },
+      "stats": {
+        "RunID": "96f77a93-8d8d-43ea-872d-9403e1fc45cc",
+        "Suite": "textcad-v2-offline-1x1/cold",
+        "Total": 160,
+        "Queued": 0,
+        "Leased": 0,
+        "Waiting": 0,
+        "Succeeded": 160,
+        "Cached": 0,
+        "Failed": 0,
+        "Retries": 0,
+        "LeaseExpirations": 0,
+        "ExecutorCalls": 160,
+        "WallSeconds": 830.422925,
+        "JobsPerMinute": 11.56037449231065,
+        "AttemptP50MS": 4308.795,
+        "AttemptP95MS": 10365.36775,
+        "AttemptP99MS": 14586.227439999997,
+        "ExecP50MS": 4306.361500000001,
+        "ExecP95MS": 10362.00865,
+        "OverheadP50MS": 2.5885,
+        "OverheadP95MS": 3.83305,
+        "MeanScore": 0.91555138125,
+        "PassRate": 0.35625,
+        "CacheSaved": 0
+      }
+    }
+  ]
+}
