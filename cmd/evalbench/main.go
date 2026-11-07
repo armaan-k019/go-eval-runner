@@ -272,8 +272,12 @@ func mutate(cases []*pb.Case, frac float64) []*pb.Case {
 	return out
 }
 
+// started tracks child processes so fail() can clean them up.
+var started []*exec.Cmd
+
 func start(path string, args ...string) *exec.Cmd {
 	cmd := exec.Command(path, args...)
+	started = append(started, cmd)
 	logf, err := os.Create(filepath.Join(os.TempDir(), fmt.Sprintf("evalbench-%s-%d.log", filepath.Base(path), time.Now().UnixNano())))
 	if err == nil {
 		cmd.Stdout, cmd.Stderr = logf, logf
@@ -344,5 +348,10 @@ func gitInfo() (string, bool) {
 
 func fail(err error) {
 	fmt.Fprintln(os.Stderr, "evalbench:", err)
+	for _, c := range started {
+		if c.Process != nil {
+			c.Process.Kill()
+		}
+	}
 	os.Exit(1)
 }
