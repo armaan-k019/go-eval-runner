@@ -28,6 +28,7 @@ func main() {
 	conc := flag.Int("concurrency", 8, "jobs executed in parallel")
 	metricsAddr := flag.String("metrics-addr", envOr("EVALRUNNER_METRICS_ADDR", ":9091"), "Prometheus /metrics address (empty to disable)")
 	types := flag.String("types", "", "comma-separated job types to accept (default: all registered)")
+	batch := flag.Bool("batch-reports", true, "send results in batched ReportResults RPCs")
 	allow := flag.String("exec-allow", os.Getenv("EVALRUNNER_EXEC_ALLOW"), "comma-separated command prefixes the exec executor may run (empty: any)")
 	flag.Parse()
 
@@ -53,7 +54,7 @@ func main() {
 		defer srv.Close()
 	}
 
-	w := worker.New(worker.Config{ID: *id, Concurrency: *conc, LeaseWait: 2 * time.Second, JobTypes: splitNonEmpty(*types)},
+	w := worker.New(worker.Config{ID: *id, Concurrency: *conc, LeaseWait: 2 * time.Second, JobTypes: splitNonEmpty(*types), BatchReports: *batch},
 		pb.NewCoordinatorClient(conn), reg, m, log)
 	log.Info("worker started", "coordinator", *coord, "concurrency", *conc)
 	if err := w.Run(ctx); err != nil {

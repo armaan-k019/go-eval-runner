@@ -13,6 +13,8 @@ service Coordinator {
   rpc LeaseJobs(LeaseJobsRequest) returns (LeaseJobsResponse);
   rpc RenewLeases(RenewLeasesRequest) returns (RenewLeasesResponse);
   rpc ReportResult(ReportResultRequest) returns (ReportResultResponse);
+  // Many results in one RPC and one Postgres transaction.
+  rpc ReportResults(ReportResultsRequest) returns (ReportResultsResponse);
 }
 
 // One eval case. payload_json is opaque to the runner and handed to the
@@ -136,4 +138,13 @@ message ReportResultRequest {
 message ReportResultResponse {
   // False when the report was stale (the lease had moved on) and was dropped.
   bool accepted = 1;
+}
+
+message ReportResultsRequest {
+  repeated ReportResultRequest results = 1;
+}
+
+message ReportResultsResponse {
+  // Parallel to the request: false where a report was stale and dropped.
+  repeated bool accepted = 1;
 }

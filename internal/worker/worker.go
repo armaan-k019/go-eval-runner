@@ -20,6 +20,10 @@ type Config struct {
 	Concurrency int
 	LeaseWait   time.Duration // long-poll duration per LeaseJobs call
 	JobTypes    []string
+	// BatchReports sends results through one reporter goroutine that packs
+	// whatever has accumulated into a single ReportResults RPC.
+	BatchReports bool
+	MaxBatch     int
 }
 
 type Worker struct {
@@ -32,6 +36,7 @@ type Worker struct {
 	mu       sync.Mutex
 	inflight map[int64]context.CancelFunc
 	leaseMS  int32
+	reports  chan *pb.ReportResultRequest
 }
 
 func New(cfg Config, client pb.CoordinatorClient, reg executor.Registry, m *metrics.Worker, log *slog.Logger) *Worker {
@@ -44,7 +49,11 @@ func New(cfg Config, client pb.CoordinatorClient, reg executor.Registry, m *metr
 	if len(cfg.JobTypes) == 0 {
 		cfg.JobTypes = reg.Names()
 	}
-	return &Worker{cfg: cfg, client: client, reg: reg, m: m, log: log, inflight: map[int64]context.CancelFunc{}, leaseMS: 15000}
+	if cfg.MaxBatch <= 0 {
+		cfg.MaxBatch = 256
+	}
+	return &Worker{cfg: cfg, client: client, reg: reg, m: m, log: log, inflight: map[int64]context.CancelFunc{}, leaseMS: 15000,
+		reports: make(chan *pb.ReportResultRequest, cfg.Concurrency)}
 }
 
 // Run leases and executes jobs until ctx is cancelled, then waits for
@@ -58,6 +67,12 @@ func (w *Worker) Run(ctx context.Context) error {
 	renewCtx, stopRenew := context.WithCancel(context.Background())
 	defer stopRenew()
 	go w.renewLoop(renewCtx)
+	reporterDone := make(chan struct{})
+	if w.cfg.BatchReports {
+		go func() { defer close(reporterDone); w.reportLoop() }()
+	} else {
+		close(reporterDone)
+	}
 
 	backoff := 100 * time.Millisecond
 	for ctx.Err() == nil {
@@ -124,6 +139,8 @@ func (w *Worker) Run(ctx context.Context) error {
 	}
 	w.log.Info("draining in-flight jobs")
 	wg.Wait()
+	close(w.reports)
+	<-reporterDone
 	return nil
 }
 
@@ -162,7 +179,50 @@ func (w *Worker) execute(ctx context.Context, job *pb.Job) {
 		outcome = "error"
 	}
 	w.m.ExecSeconds.WithLabelValues(job.JobType, outcome).Observe(elapsed.Seconds())
+	if w.cfg.BatchReports {
+		w.reports <- req
+		return
+	}
 	w.report(req)
+}
+
+// reportLoop drains the report channel. While one ReportResults RPC is in
+// flight, finished jobs queue up and go out together in the next one, so
+// batch size adapts to load with no added latency when idle.
+func (w *Worker) reportLoop() {
+	for first := range w.reports {
+		batch := []*pb.ReportResultRequest{first}
+	drain:
+		for len(batch) < w.cfg.MaxBatch {
+			select {
+			case r, ok := <-w.reports:
+				if !ok {
+					break drain
+				}
+				batch = append(batch, r)
+			default:
+				break drain
+			}
+		}
+		w.sendBatch(batch)
+	}
+}
+
+func (w *Worker) sendBatch(batch []*pb.ReportResultRequest) {
+	delay := 50 * time.Millisecond
+	for i := 0; i < 8; i++ {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		_, err := w.client.ReportResults(ctx, &pb.ReportResultsRequest{Results: batch})
+		cancel()
+		if err == nil {
+			return
+		}
+		w.log.Warn("batch report failed, retrying", "size", len(batch), "err", err)
+		time.Sleep(delay)
+		delay = min(delay*2, 3*time.Second)
+	}
+	w.m.ReportErrs.Add(float64(len(batch)))
+	w.log.Error("giving up on batch report; leases will expire and the jobs will be retried", "size", len(batch))
 }
 
 // report retries transient RPC failures. Reports are idempotent on the

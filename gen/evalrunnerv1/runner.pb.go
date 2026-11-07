@@ -1038,6 +1038,95 @@ func (x *ReportResultResponse) GetAccepted() bool {
 	return false
 }
 
+type ReportResultsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Results       []*ReportResultRequest `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReportResultsRequest) Reset() {
+	*x = ReportResultsRequest{}
+	mi := &file_evalrunner_v1_runner_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportResultsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportResultsRequest) ProtoMessage() {}
+
+func (x *ReportResultsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_evalrunner_v1_runner_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReportResultsRequest.ProtoReflect.Descriptor instead.
+func (*ReportResultsRequest) Descriptor() ([]byte, []int) {
+	return file_evalrunner_v1_runner_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ReportResultsRequest) GetResults() []*ReportResultRequest {
+	if x != nil {
+		return x.Results
+	}
+	return nil
+}
+
+type ReportResultsResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Parallel to the request: false where a report was stale and dropped.
+	Accepted      []bool `protobuf:"varint,1,rep,packed,name=accepted,proto3" json:"accepted,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReportResultsResponse) Reset() {
+	*x = ReportResultsResponse{}
+	mi := &file_evalrunner_v1_runner_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportResultsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportResultsResponse) ProtoMessage() {}
+
+func (x *ReportResultsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_evalrunner_v1_runner_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReportResultsResponse.ProtoReflect.Descriptor instead.
+func (*ReportResultsResponse) Descriptor() ([]byte, []int) {
+	return file_evalrunner_v1_runner_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ReportResultsResponse) GetAccepted() []bool {
+	if x != nil {
+		return x.Accepted
+	}
+	return nil
+}
+
 var File_evalrunner_v1_runner_proto protoreflect.FileDescriptor
 
 const file_evalrunner_v1_runner_proto_rawDesc = "" +
@@ -1128,17 +1217,22 @@ const file_evalrunner_v1_runner_proto_rawDesc = "" +
 	"\tretryable\x18\a \x01(\bR\tretryable\x12\x17\n" +
 	"\aexec_us\x18\b \x01(\x03R\x06execUs\"2\n" +
 	"\x14ReportResultResponse\x12\x1a\n" +
-	"\baccepted\x18\x01 \x01(\bR\baccepted*J\n" +
+	"\baccepted\x18\x01 \x01(\bR\baccepted\"T\n" +
+	"\x14ReportResultsRequest\x12<\n" +
+	"\aresults\x18\x01 \x03(\v2\".evalrunner.v1.ReportResultRequestR\aresults\"3\n" +
+	"\x15ReportResultsResponse\x12\x1a\n" +
+	"\baccepted\x18\x01 \x03(\bR\baccepted*J\n" +
 	"\aOutcome\x12\x17\n" +
 	"\x13OUTCOME_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fOUTCOME_SUCCESS\x10\x01\x12\x11\n" +
-	"\rOUTCOME_ERROR\x10\x022\x9e\x03\n" +
+	"\rOUTCOME_ERROR\x10\x022\xfa\x03\n" +
 	"\vCoordinator\x12N\n" +
 	"\tSubmitRun\x12\x1f.evalrunner.v1.SubmitRunRequest\x1a .evalrunner.v1.SubmitRunResponse\x12@\n" +
 	"\x06GetRun\x12\x1c.evalrunner.v1.GetRunRequest\x1a\x18.evalrunner.v1.RunStatus\x12N\n" +
 	"\tLeaseJobs\x12\x1f.evalrunner.v1.LeaseJobsRequest\x1a .evalrunner.v1.LeaseJobsResponse\x12T\n" +
 	"\vRenewLeases\x12!.evalrunner.v1.RenewLeasesRequest\x1a\".evalrunner.v1.RenewLeasesResponse\x12W\n" +
-	"\fReportResult\x12\".evalrunner.v1.ReportResultRequest\x1a#.evalrunner.v1.ReportResultResponseBEZCgithub.com/armaan-k019/go-eval-runner/gen/evalrunnerv1;evalrunnerv1b\x06proto3"
+	"\fReportResult\x12\".evalrunner.v1.ReportResultRequest\x1a#.evalrunner.v1.ReportResultResponse\x12Z\n" +
+	"\rReportResults\x12#.evalrunner.v1.ReportResultsRequest\x1a$.evalrunner.v1.ReportResultsResponseBEZCgithub.com/armaan-k019/go-eval-runner/gen/evalrunnerv1;evalrunnerv1b\x06proto3"
 
 var (
 	file_evalrunner_v1_runner_proto_rawDescOnce sync.Once
@@ -1153,41 +1247,46 @@ func file_evalrunner_v1_runner_proto_rawDescGZIP() []byte {
 }
 
 var file_evalrunner_v1_runner_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_evalrunner_v1_runner_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_evalrunner_v1_runner_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_evalrunner_v1_runner_proto_goTypes = []any{
-	(Outcome)(0),                 // 0: evalrunner.v1.Outcome
-	(*Case)(nil),                 // 1: evalrunner.v1.Case
-	(*SubmitRunRequest)(nil),     // 2: evalrunner.v1.SubmitRunRequest
-	(*SubmitRunResponse)(nil),    // 3: evalrunner.v1.SubmitRunResponse
-	(*GetRunRequest)(nil),        // 4: evalrunner.v1.GetRunRequest
-	(*RunStatus)(nil),            // 5: evalrunner.v1.RunStatus
-	(*LeaseJobsRequest)(nil),     // 6: evalrunner.v1.LeaseJobsRequest
-	(*Job)(nil),                  // 7: evalrunner.v1.Job
-	(*LeaseJobsResponse)(nil),    // 8: evalrunner.v1.LeaseJobsResponse
-	(*RenewLeasesRequest)(nil),   // 9: evalrunner.v1.RenewLeasesRequest
-	(*RenewLeasesResponse)(nil),  // 10: evalrunner.v1.RenewLeasesResponse
-	(*ReportResultRequest)(nil),  // 11: evalrunner.v1.ReportResultRequest
-	(*ReportResultResponse)(nil), // 12: evalrunner.v1.ReportResultResponse
+	(Outcome)(0),                  // 0: evalrunner.v1.Outcome
+	(*Case)(nil),                  // 1: evalrunner.v1.Case
+	(*SubmitRunRequest)(nil),      // 2: evalrunner.v1.SubmitRunRequest
+	(*SubmitRunResponse)(nil),     // 3: evalrunner.v1.SubmitRunResponse
+	(*GetRunRequest)(nil),         // 4: evalrunner.v1.GetRunRequest
+	(*RunStatus)(nil),             // 5: evalrunner.v1.RunStatus
+	(*LeaseJobsRequest)(nil),      // 6: evalrunner.v1.LeaseJobsRequest
+	(*Job)(nil),                   // 7: evalrunner.v1.Job
+	(*LeaseJobsResponse)(nil),     // 8: evalrunner.v1.LeaseJobsResponse
+	(*RenewLeasesRequest)(nil),    // 9: evalrunner.v1.RenewLeasesRequest
+	(*RenewLeasesResponse)(nil),   // 10: evalrunner.v1.RenewLeasesResponse
+	(*ReportResultRequest)(nil),   // 11: evalrunner.v1.ReportResultRequest
+	(*ReportResultResponse)(nil),  // 12: evalrunner.v1.ReportResultResponse
+	(*ReportResultsRequest)(nil),  // 13: evalrunner.v1.ReportResultsRequest
+	(*ReportResultsResponse)(nil), // 14: evalrunner.v1.ReportResultsResponse
 }
 var file_evalrunner_v1_runner_proto_depIdxs = []int32{
 	1,  // 0: evalrunner.v1.SubmitRunRequest.cases:type_name -> evalrunner.v1.Case
 	7,  // 1: evalrunner.v1.LeaseJobsResponse.jobs:type_name -> evalrunner.v1.Job
 	0,  // 2: evalrunner.v1.ReportResultRequest.outcome:type_name -> evalrunner.v1.Outcome
-	2,  // 3: evalrunner.v1.Coordinator.SubmitRun:input_type -> evalrunner.v1.SubmitRunRequest
-	4,  // 4: evalrunner.v1.Coordinator.GetRun:input_type -> evalrunner.v1.GetRunRequest
-	6,  // 5: evalrunner.v1.Coordinator.LeaseJobs:input_type -> evalrunner.v1.LeaseJobsRequest
-	9,  // 6: evalrunner.v1.Coordinator.RenewLeases:input_type -> evalrunner.v1.RenewLeasesRequest
-	11, // 7: evalrunner.v1.Coordinator.ReportResult:input_type -> evalrunner.v1.ReportResultRequest
-	3,  // 8: evalrunner.v1.Coordinator.SubmitRun:output_type -> evalrunner.v1.SubmitRunResponse
-	5,  // 9: evalrunner.v1.Coordinator.GetRun:output_type -> evalrunner.v1.RunStatus
-	8,  // 10: evalrunner.v1.Coordinator.LeaseJobs:output_type -> evalrunner.v1.LeaseJobsResponse
-	10, // 11: evalrunner.v1.Coordinator.RenewLeases:output_type -> evalrunner.v1.RenewLeasesResponse
-	12, // 12: evalrunner.v1.Coordinator.ReportResult:output_type -> evalrunner.v1.ReportResultResponse
-	8,  // [8:13] is the sub-list for method output_type
-	3,  // [3:8] is the sub-list for method input_type
-	3,  // [3:3] is the sub-list for extension type_name
-	3,  // [3:3] is the sub-list for extension extendee
-	0,  // [0:3] is the sub-list for field type_name
+	11, // 3: evalrunner.v1.ReportResultsRequest.results:type_name -> evalrunner.v1.ReportResultRequest
+	2,  // 4: evalrunner.v1.Coordinator.SubmitRun:input_type -> evalrunner.v1.SubmitRunRequest
+	4,  // 5: evalrunner.v1.Coordinator.GetRun:input_type -> evalrunner.v1.GetRunRequest
+	6,  // 6: evalrunner.v1.Coordinator.LeaseJobs:input_type -> evalrunner.v1.LeaseJobsRequest
+	9,  // 7: evalrunner.v1.Coordinator.RenewLeases:input_type -> evalrunner.v1.RenewLeasesRequest
+	11, // 8: evalrunner.v1.Coordinator.ReportResult:input_type -> evalrunner.v1.ReportResultRequest
+	13, // 9: evalrunner.v1.Coordinator.ReportResults:input_type -> evalrunner.v1.ReportResultsRequest
+	3,  // 10: evalrunner.v1.Coordinator.SubmitRun:output_type -> evalrunner.v1.SubmitRunResponse
+	5,  // 11: evalrunner.v1.Coordinator.GetRun:output_type -> evalrunner.v1.RunStatus
+	8,  // 12: evalrunner.v1.Coordinator.LeaseJobs:output_type -> evalrunner.v1.LeaseJobsResponse
+	10, // 13: evalrunner.v1.Coordinator.RenewLeases:output_type -> evalrunner.v1.RenewLeasesResponse
+	12, // 14: evalrunner.v1.Coordinator.ReportResult:output_type -> evalrunner.v1.ReportResultResponse
+	14, // 15: evalrunner.v1.Coordinator.ReportResults:output_type -> evalrunner.v1.ReportResultsResponse
+	10, // [10:16] is the sub-list for method output_type
+	4,  // [4:10] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_evalrunner_v1_runner_proto_init() }
@@ -1201,7 +1300,7 @@ func file_evalrunner_v1_runner_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_evalrunner_v1_runner_proto_rawDesc), len(file_evalrunner_v1_runner_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   12,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

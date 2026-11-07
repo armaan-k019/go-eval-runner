@@ -185,19 +185,46 @@ func (s *Server) RenewLeases(ctx context.Context, req *pb.RenewLeasesRequest) (*
 	return &pb.RenewLeasesResponse{LostJobIds: lost}, nil
 }
 
-func (s *Server) ReportResult(ctx context.Context, req *pb.ReportResultRequest) (*pb.ReportResultResponse, error) {
-	r := store.Report{
+func toStoreReport(req *pb.ReportResultRequest) store.Report {
+	return store.Report{
 		WorkerID: req.WorkerId, JobID: req.JobId, Attempt: int(req.Attempt),
 		Success: req.Outcome == pb.Outcome_OUTCOME_SUCCESS, Result: req.ResultJson,
 		Error: req.Error, Retryable: req.Retryable, ExecUS: req.ExecUs,
 	}
-	out, err := s.st.Report(ctx, r, s.cfg.BackoffBase, s.cfg.BackoffMax)
+}
+
+func (s *Server) ReportResult(ctx context.Context, req *pb.ReportResultRequest) (*pb.ReportResultResponse, error) {
+	out, err := s.st.Report(ctx, toStoreReport(req), s.cfg.BackoffBase, s.cfg.BackoffMax)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "report: %v", err)
 	}
+	s.afterReport(req, out)
+	return &pb.ReportResultResponse{Accepted: out.Accepted}, nil
+}
+
+func (s *Server) ReportResults(ctx context.Context, req *pb.ReportResultsRequest) (*pb.ReportResultsResponse, error) {
+	rs := make([]store.Report, len(req.Results))
+	for i, r := range req.Results {
+		rs[i] = toStoreReport(r)
+	}
+	outs, err := s.st.ReportBatch(ctx, rs, s.cfg.BackoffBase, s.cfg.BackoffMax)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "report batch: %v", err)
+	}
+	resp := &pb.ReportResultsResponse{Accepted: make([]bool, len(outs))}
+	for i, out := range outs {
+		s.afterReport(req.Results[i], out)
+		resp.Accepted[i] = out.Accepted
+	}
+	return resp, nil
+}
+
+// afterReport updates metrics and wakes long-polling lessees when a report
+// made new work runnable.
+func (s *Server) afterReport(req *pb.ReportResultRequest, out store.ReportOutcome) {
 	if !out.Accepted {
 		s.m.StaleReports.Inc()
-		return &pb.ReportResultResponse{Accepted: false}, nil
+		return
 	}
 	s.m.AttemptLat.Observe(float64(req.ExecUs) / 1e6)
 	switch out.Status {
@@ -214,7 +241,6 @@ func (s *Server) ReportResult(ctx context.Context, req *pb.ReportResultRequest) 
 	if out.Status == "failed" {
 		s.notify() // a waiter may have been promoted
 	}
-	return &pb.ReportResultResponse{Accepted: true}, nil
 }
 
 // RunReaper reclaims expired leases and refreshes the queue-depth gauge until

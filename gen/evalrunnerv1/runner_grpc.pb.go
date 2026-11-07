@@ -19,11 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Coordinator_SubmitRun_FullMethodName    = "/evalrunner.v1.Coordinator/SubmitRun"
-	Coordinator_GetRun_FullMethodName       = "/evalrunner.v1.Coordinator/GetRun"
-	Coordinator_LeaseJobs_FullMethodName    = "/evalrunner.v1.Coordinator/LeaseJobs"
-	Coordinator_RenewLeases_FullMethodName  = "/evalrunner.v1.Coordinator/RenewLeases"
-	Coordinator_ReportResult_FullMethodName = "/evalrunner.v1.Coordinator/ReportResult"
+	Coordinator_SubmitRun_FullMethodName     = "/evalrunner.v1.Coordinator/SubmitRun"
+	Coordinator_GetRun_FullMethodName        = "/evalrunner.v1.Coordinator/GetRun"
+	Coordinator_LeaseJobs_FullMethodName     = "/evalrunner.v1.Coordinator/LeaseJobs"
+	Coordinator_RenewLeases_FullMethodName   = "/evalrunner.v1.Coordinator/RenewLeases"
+	Coordinator_ReportResult_FullMethodName  = "/evalrunner.v1.Coordinator/ReportResult"
+	Coordinator_ReportResults_FullMethodName = "/evalrunner.v1.Coordinator/ReportResults"
 )
 
 // CoordinatorClient is the client API for Coordinator service.
@@ -38,6 +39,8 @@ type CoordinatorClient interface {
 	LeaseJobs(ctx context.Context, in *LeaseJobsRequest, opts ...grpc.CallOption) (*LeaseJobsResponse, error)
 	RenewLeases(ctx context.Context, in *RenewLeasesRequest, opts ...grpc.CallOption) (*RenewLeasesResponse, error)
 	ReportResult(ctx context.Context, in *ReportResultRequest, opts ...grpc.CallOption) (*ReportResultResponse, error)
+	// Many results in one RPC and one Postgres transaction.
+	ReportResults(ctx context.Context, in *ReportResultsRequest, opts ...grpc.CallOption) (*ReportResultsResponse, error)
 }
 
 type coordinatorClient struct {
@@ -98,6 +101,16 @@ func (c *coordinatorClient) ReportResult(ctx context.Context, in *ReportResultRe
 	return out, nil
 }
 
+func (c *coordinatorClient) ReportResults(ctx context.Context, in *ReportResultsRequest, opts ...grpc.CallOption) (*ReportResultsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReportResultsResponse)
+	err := c.cc.Invoke(ctx, Coordinator_ReportResults_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CoordinatorServer is the server API for Coordinator service.
 // All implementations must embed UnimplementedCoordinatorServer
 // for forward compatibility.
@@ -110,6 +123,8 @@ type CoordinatorServer interface {
 	LeaseJobs(context.Context, *LeaseJobsRequest) (*LeaseJobsResponse, error)
 	RenewLeases(context.Context, *RenewLeasesRequest) (*RenewLeasesResponse, error)
 	ReportResult(context.Context, *ReportResultRequest) (*ReportResultResponse, error)
+	// Many results in one RPC and one Postgres transaction.
+	ReportResults(context.Context, *ReportResultsRequest) (*ReportResultsResponse, error)
 	mustEmbedUnimplementedCoordinatorServer()
 }
 
@@ -134,6 +149,9 @@ func (UnimplementedCoordinatorServer) RenewLeases(context.Context, *RenewLeasesR
 }
 func (UnimplementedCoordinatorServer) ReportResult(context.Context, *ReportResultRequest) (*ReportResultResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ReportResult not implemented")
+}
+func (UnimplementedCoordinatorServer) ReportResults(context.Context, *ReportResultsRequest) (*ReportResultsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReportResults not implemented")
 }
 func (UnimplementedCoordinatorServer) mustEmbedUnimplementedCoordinatorServer() {}
 func (UnimplementedCoordinatorServer) testEmbeddedByValue()                     {}
@@ -246,6 +264,24 @@ func _Coordinator_ReportResult_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Coordinator_ReportResults_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportResultsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CoordinatorServer).ReportResults(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Coordinator_ReportResults_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CoordinatorServer).ReportResults(ctx, req.(*ReportResultsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Coordinator_ServiceDesc is the grpc.ServiceDesc for Coordinator service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -272,6 +308,10 @@ var Coordinator_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReportResult",
 			Handler:    _Coordinator_ReportResult_Handler,
+		},
+		{
+			MethodName: "ReportResults",
+			Handler:    _Coordinator_ReportResults_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

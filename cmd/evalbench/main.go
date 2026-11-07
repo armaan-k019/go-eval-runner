@@ -45,6 +45,7 @@ type Setup struct {
 	KillWorkerAt string          `json:"kill_worker_after,omitempty"`
 	Passes       []string        `json:"passes"`
 	CasesFile    string          `json:"cases_file,omitempty"`
+	BatchReports bool            `json:"batch_reports"`
 	Host         Host            `json:"host"`
 	GitCommit    string          `json:"git_commit"`
 	GitDirty     bool            `json:"git_dirty"`
@@ -92,6 +93,7 @@ func main() {
 	kill := flag.Duration("kill-worker-after", 0, "SIGKILL one worker this long into pass 1")
 	warm := flag.Bool("warm", false, "add a second pass with identical cases (cache hits)")
 	changed := flag.Float64("changed", 0, "add a pass where this fraction of cases has a new payload")
+	flag.BoolVar(&s.BatchReports, "batch-reports", true, "workers batch result reports")
 	flag.StringVar(&s.CasesFile, "cases", "", "JSONL cases file instead of generated mock cases")
 	dsn := flag.String("dsn", "postgres://eval:eval@localhost:5432/eval?sslmode=disable", "Postgres DSN")
 	out := flag.String("out", "bench/runs", "output directory")
@@ -134,7 +136,7 @@ func main() {
 	var workers []*exec.Cmd
 	for i := 0; i < s.Workers; i++ {
 		w := start(filepath.Join(*bin, "worker"), "-coordinator", "127.0.0.1:17070", "-id", fmt.Sprintf("bench-w%d", i),
-			"-concurrency", fmt.Sprint(s.Concurrency), "-metrics-addr", "")
+			"-concurrency", fmt.Sprint(s.Concurrency), "-metrics-addr", "", fmt.Sprintf("-batch-reports=%v", s.BatchReports))
 		workers = append(workers, w)
 	}
 	defer func() {

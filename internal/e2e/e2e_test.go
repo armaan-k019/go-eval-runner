@@ -98,7 +98,7 @@ func startCluster(t *testing.T, st *store.Store, workers, conc int, cfg coordina
 	for i := 0; i < workers; i++ {
 		reg := executor.Registry{}
 		reg.Register(ce)
-		w := worker.New(worker.Config{ID: fmt.Sprintf("w%d", i), Concurrency: conc, LeaseWait: 200 * time.Millisecond},
+		w := worker.New(worker.Config{ID: fmt.Sprintf("w%d", i), Concurrency: conc, LeaseWait: 200 * time.Millisecond, BatchReports: i%2 == 0},
 			client, reg, metrics.NewWorker(prometheus.NewRegistry()), quiet)
 		wg.Add(1)
 		go func() { defer wg.Done(); w.Run(ctx) }()

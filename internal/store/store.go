@@ -392,13 +392,35 @@ func Backoff(attempt int, base, max time.Duration) time.Duration {
 // attempt): a worker whose lease expired and was handed to someone else
 // gets Accepted=false and its result is dropped.
 func (s *Store) Report(ctx context.Context, r Report, backoffBase, backoffMax time.Duration) (ReportOutcome, error) {
-	var out ReportOutcome
+	outs, err := s.ReportBatch(ctx, []Report{r}, backoffBase, backoffMax)
+	if err != nil {
+		return ReportOutcome{}, err
+	}
+	return outs[0], nil
+}
+
+// ReportBatch applies many reports in one transaction, so a worker pays one
+// commit (one WAL flush) per batch instead of per job. Stale reports are
+// skipped individually; a database error aborts the whole batch, which is
+// safe to resend because accepted reports are fenced on retry.
+func (s *Store) ReportBatch(ctx context.Context, rs []Report, backoffBase, backoffMax time.Duration) ([]ReportOutcome, error) {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
-		return out, err
+		return nil, err
 	}
 	defer tx.Rollback(ctx)
+	outs := make([]ReportOutcome, len(rs))
+	for i, r := range rs {
+		if outs[i], err = reportTx(ctx, tx, r, backoffBase, backoffMax); err != nil {
+			return nil, err
+		}
+	}
+	return outs, tx.Commit(ctx)
+}
 
+func reportTx(ctx context.Context, tx pgx.Tx, r Report, backoffBase, backoffMax time.Duration) (ReportOutcome, error) {
+	var out ReportOutcome
+	var err error
 	var cacheKey string
 	var leasedAt time.Time
 	outcome := "error"
@@ -478,7 +500,7 @@ func (s *Store) Report(ctx context.Context, r Report, backoffBase, backoffMax ti
 		return out, err
 	}
 	out.Accepted = true
-	return out, tx.Commit(ctx)
+	return out, nil
 }
 
 type ReapResult struct {
