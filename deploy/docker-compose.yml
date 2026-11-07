@@ -1,0 +1,63 @@
+# Local cluster: Postgres, one coordinator, N workers, Prometheus.
+#   docker compose -f deploy/docker-compose.yml up -d --build --scale worker=4
+#   docker compose -f deploy/docker-compose.yml run --rm evalctl gen-mock -n 1000 > cases.jsonl
+name: evalrunner
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: eval
+      POSTGRES_PASSWORD: eval
+      POSTGRES_DB: eval
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eval"]
+      interval: 2s
+      retries: 30
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  coordinator:
+    build: ..
+    image: go-eval-runner:dev
+    entrypoint: ["coordinator"]
+    environment:
+      EVALRUNNER_DSN: postgres://eval:eval@postgres:5432/eval?sslmode=disable
+    ports:
+      - "7070:7070"
+      - "9090:9090"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  worker:
+    image: go-eval-runner:dev
+    entrypoint: ["worker", "-concurrency", "16"]
+    environment:
+      EVALRUNNER_COORDINATOR: coordinator:7070
+    depends_on:
+      - coordinator
+    deploy:
+      replicas: 2
+
+  # One-shot client: docker compose run --rm evalctl submit ...
+  evalctl:
+    image: go-eval-runner:dev
+    entrypoint: ["evalctl"]
+    environment:
+      EVALRUNNER_COORDINATOR: coordinator:7070
+    volumes:
+      - ../examples:/examples:ro
+    profiles: ["cli"]
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9099:9090"
+    depends_on:
+      - coordinator
+
+volumes:
+  pgdata:
