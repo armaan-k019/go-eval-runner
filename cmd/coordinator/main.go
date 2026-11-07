@@ -67,7 +67,7 @@ func main() {
 		log.Error("listen", "err", err)
 		os.Exit(1)
 	}
-	g := grpc.NewServer()
+	g := grpc.NewServer(grpc.MaxRecvMsgSize(256 << 20)) // large suites arrive in one SubmitRun
 	pb.RegisterCoordinatorServer(g, srv)
 	go func() {
 		<-ctx.Done()
