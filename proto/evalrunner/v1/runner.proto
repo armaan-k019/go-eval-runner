@@ -1,0 +1,139 @@
+syntax = "proto3";
+
+package evalrunner.v1;
+
+option go_package = "github.com/armaan-k019/go-eval-runner/gen/evalrunnerv1;evalrunnerv1";
+
+// Coordinator owns the job queue (backed by Postgres). Clients submit runs,
+// workers pull jobs with leases and report results.
+service Coordinator {
+  rpc SubmitRun(SubmitRunRequest) returns (SubmitRunResponse);
+  rpc GetRun(GetRunRequest) returns (RunStatus);
+
+  rpc LeaseJobs(LeaseJobsRequest) returns (LeaseJobsResponse);
+  rpc RenewLeases(RenewLeasesRequest) returns (RenewLeasesResponse);
+  rpc ReportResult(ReportResultRequest) returns (ReportResultResponse);
+}
+
+// One eval case. payload_json is opaque to the runner and handed to the
+// executor as is.
+message Case {
+  string case_id = 1;
+  bytes payload_json = 2;
+}
+
+message SubmitRunRequest {
+  string suite = 1;
+  // Executor name, for example "mock" or "exec".
+  string job_type = 2;
+  // Executor configuration shared by every job in the run, as JSON. For
+  // "exec" this holds the command. It is part of the cache key.
+  bytes config_json = 3;
+  repeated Case cases = 4;
+  int32 max_attempts = 5;
+  int32 timeout_ms = 6;
+  // Skip the result cache for this run (still writes results to it).
+  bool no_cache = 7;
+}
+
+message SubmitRunResponse {
+  string run_id = 1;
+  int32 jobs = 2;
+  // Jobs completed immediately from the result cache.
+  int32 cache_hits = 3;
+  // Jobs parked behind an identical in-flight job.
+  int32 deduped = 4;
+}
+
+message GetRunRequest {
+  string run_id = 1;
+}
+
+message RunStatus {
+  string run_id = 1;
+  string suite = 2;
+  bool done = 3;
+  int64 total = 4;
+  int64 queued = 5;
+  int64 leased = 6;
+  int64 waiting = 7;
+  int64 succeeded = 8;
+  int64 cached = 9;
+  int64 failed = 10;
+  int64 retries = 11;
+  int64 lease_expirations = 12;
+  double wall_seconds = 13;
+  double jobs_per_minute = 14;
+  // Attempt latency: from lease grant to result report, coordinator clock.
+  double attempt_p50_ms = 15;
+  double attempt_p95_ms = 16;
+  double attempt_p99_ms = 17;
+  // Executor time as measured by the worker.
+  double exec_p50_ms = 18;
+  double exec_p95_ms = 19;
+  // Attempt latency minus executor time: RPC, queueing in the worker, DB.
+  double overhead_p50_ms = 20;
+  double overhead_p95_ms = 21;
+  double mean_score = 22;
+  double pass_rate = 23;
+  // Share of jobs that did not call the executor (cached / total).
+  double cache_saved_fraction = 24;
+  int64 executor_calls = 25;
+}
+
+message LeaseJobsRequest {
+  string worker_id = 1;
+  int32 max_jobs = 2;
+  // Long poll: wait up to this long for work before returning empty.
+  int32 wait_ms = 3;
+  // Executors this worker can run. Empty means any.
+  repeated string job_types = 4;
+}
+
+message Job {
+  int64 job_id = 1;
+  string run_id = 2;
+  string case_id = 3;
+  string job_type = 4;
+  bytes config_json = 5;
+  bytes payload_json = 6;
+  int32 attempt = 7;
+  int32 timeout_ms = 8;
+}
+
+message LeaseJobsResponse {
+  repeated Job jobs = 1;
+  int32 lease_ms = 2;
+}
+
+message RenewLeasesRequest {
+  string worker_id = 1;
+  repeated int64 job_ids = 2;
+}
+
+message RenewLeasesResponse {
+  // Jobs this worker no longer holds (lease expired and was reassigned).
+  repeated int64 lost_job_ids = 1;
+}
+
+enum Outcome {
+  OUTCOME_UNSPECIFIED = 0;
+  OUTCOME_SUCCESS = 1;
+  OUTCOME_ERROR = 2;
+}
+
+message ReportResultRequest {
+  string worker_id = 1;
+  int64 job_id = 2;
+  int32 attempt = 3;
+  Outcome outcome = 4;
+  bytes result_json = 5;
+  string error = 6;
+  bool retryable = 7;
+  int64 exec_us = 8;
+}
+
+message ReportResultResponse {
+  // False when the report was stale (the lease had moved on) and was dropped.
+  bool accepted = 1;
+}
