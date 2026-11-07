@@ -313,7 +313,7 @@ func waitReady(c pb.CoordinatorClient) {
 
 func hostInfo(dsn string) Host {
 	h := Host{CPUs: runtime.NumCPU(), OS: runtime.GOOS + "/" + runtime.GOARCH, GoVersion: runtime.Version(),
-		Topology: "single host: 1 coordinator process + N worker processes over loopback gRPC, Postgres 16 in Docker on the same host"}
+		Topology: "single host: 1 coordinator process + N worker processes over loopback gRPC; Postgres 16 in a Docker container on the same host"}
 	if b, err := os.ReadFile("/proc/cpuinfo"); err == nil {
 		for _, l := range strings.Split(string(b), "\n") {
 			if strings.HasPrefix(l, "model name") {

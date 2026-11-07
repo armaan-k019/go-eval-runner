@@ -306,3 +306,61 @@ func TestWorkerCrashRecovery(t *testing.T) {
 	}
 	t.Fatal("crashed worker's job was never recovered")
 }
+
+func TestReportBatchMixedOutcomes(t *testing.T) {
+	st := openStore(t)
+	ctx := context.Background()
+	sub, err := st.CreateRun(ctx, store.RunSpec{Suite: "batch", JobType: "mock", Config: []byte(`{}`), MaxAttempts: 2, TimeoutMS: 1000},
+		[]store.CaseIn{
+			{CaseID: "ok", Payload: []byte(`{"k":1}`)},
+			{CaseID: "ok-dup", Payload: []byte(`{"k":1}`)}, // waits on "ok"
+			{CaseID: "retry", Payload: []byte(`{"k":2}`)},
+			{CaseID: "perm", Payload: []byte(`{"k":3}`)},
+			{CaseID: "stale", Payload: []byte(`{"k":4}`)},
+		})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sub.Deduped != 1 {
+		t.Fatalf("want 1 deduped, got %+v", sub)
+	}
+	jobs, err := st.Lease(ctx, "w", 10, nil, time.Minute)
+	if err != nil || len(jobs) != 4 {
+		t.Fatalf("lease: %d %v", len(jobs), err)
+	}
+	byCase := map[string]store.LeasedJob{}
+	for _, j := range jobs {
+		byCase[j.CaseID] = j
+	}
+	outs, err := st.ReportBatch(ctx, []store.Report{
+		{WorkerID: "w", JobID: byCase["ok"].JobID, Attempt: 1, Success: true, Result: []byte(`{"score":1,"passed":true}`)},
+		{WorkerID: "w", JobID: byCase["retry"].JobID, Attempt: 1, Error: "flaky", Retryable: true},
+		{WorkerID: "w", JobID: byCase["perm"].JobID, Attempt: 1, Error: "bad input", Retryable: false},
+		{WorkerID: "w", JobID: byCase["stale"].JobID, Attempt: 7, Success: true},
+	}, time.Millisecond, time.Millisecond)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []struct {
+		accepted bool
+		status   string
+		resolved int
+	}{{true, "succeeded", 1}, {true, "queued", 0}, {true, "failed", 0}, {false, "", 0}}
+	for i, w := range want {
+		if outs[i].Accepted != w.accepted || outs[i].Status != w.status || outs[i].Resolved != w.resolved {
+			t.Errorf("report %d: got %+v want %+v", i, outs[i], w)
+		}
+	}
+	// Resending the same batch is harmless: everything is fenced.
+	again, err := st.ReportBatch(ctx, []store.Report{{WorkerID: "w", JobID: byCase["ok"].JobID, Attempt: 1, Success: true}}, time.Millisecond, time.Millisecond)
+	if err != nil || again[0].Accepted {
+		t.Fatalf("duplicate report accepted: %+v %v", again, err)
+	}
+	stats, err := st.RunStats(ctx, sub.RunID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stats.Succeeded != 1 || stats.Cached != 1 || stats.Failed != 1 || stats.Queued != 1 || stats.Leased != 1 {
+		t.Fatalf("stats: %+v", stats)
+	}
+}
