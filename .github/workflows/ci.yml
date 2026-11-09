@@ -65,9 +65,16 @@ jobs:
           KIND_VERSION: v0.31.0
           KIND_SHA256: eb244cbafcc157dff60cf68693c14c9a75c4e6e6fedaf9cd71c58117cb93e3fa
         run: |
-          curl -fsSL --retry 5 --retry-all-errors -o kind \
-            "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/kind-linux-amd64"
-          echo "${KIND_SHA256}  kind" | sha256sum -c -
+          # The release download has returned 504 for over 30 s on one run.
+          # Fall back to building the same tagged version through the Go
+          # module proxy, which verifies it against the checksum database.
+          if curl -fsSL --retry 5 --retry-all-errors -o kind \
+              "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/kind-linux-amd64"; then
+            echo "${KIND_SHA256}  kind" | sha256sum -c -
+          else
+            echo "release download failed, building kind ${KIND_VERSION} with go install"
+            GOBIN="$PWD" go install "sigs.k8s.io/kind@${KIND_VERSION}"
+          fi
           sudo install -m 0755 kind /usr/local/bin/kind
           kind version
       - name: Create cluster
