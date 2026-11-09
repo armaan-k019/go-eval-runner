@@ -163,7 +163,54 @@ func TestRedisCacheSharesStats(t *testing.T) {
 		t.Fatalf("100 reads across 2 replicas cost %d Postgres queries, want 1", misses.Load())
 	}
 	ttl := rdb.PTTL(context.Background(), statsKey("run-1")).Val()
-	if ttl <= 0 || ttl > time.Minute {
+	if ttl <= time.Minute || ttl > time.Minute+staleKeep {
 		t.Fatalf("live run ttl %v", ttl)
+	}
+}
+
+// slowStore takes a while per computation, like a large run's aggregate.
+type slowStore struct {
+	fakeStore
+	delay time.Duration
+	n     atomic.Int64
+}
+
+func (s *slowStore) RunStats(ctx context.Context, id string) (store.RunStats, error) {
+	s.n.Add(1)
+	time.Sleep(s.delay)
+	return s.fakeStore.RunStats(ctx, id)
+}
+
+// TestRedisCacheNoStampede: 200 concurrent readers of an expired entry cause
+// one recompute, not 200.
+func TestRedisCacheNoStampede(t *testing.T) {
+	addr := os.Getenv("EVALRUNNER_TEST_REDIS")
+	if addr == "" {
+		t.Skip("EVALRUNNER_TEST_REDIS not set")
+	}
+	rdb := redis.NewClient(&redis.Options{Addr: addr})
+	defer rdb.Close()
+	ctx := context.Background()
+	rdb.Del(ctx, statsKey("run-1"), lockKey("run-1"))
+	src := &slowStore{fakeStore: fakeStore{doneAfter: 1 << 30}, delay: 50 * time.Millisecond}
+	c := &RedisStats{Src: src, RDB: rdb, TTL: 20 * time.Millisecond, DoneTTL: time.Hour}
+
+	for round := 0; round < 2; round++ { // round 0: cold miss, round 1: stale entry
+		before := src.n.Load()
+		var wg sync.WaitGroup
+		for i := 0; i < 200; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				if _, err := c.RunStats(ctx, "run-1"); err != nil {
+					t.Error(err)
+				}
+			}()
+		}
+		wg.Wait()
+		if got := src.n.Load() - before; got != 1 {
+			t.Fatalf("round %d: 200 concurrent readers caused %d recomputes, want 1", round, got)
+		}
+		time.Sleep(30 * time.Millisecond) // let the entry go stale
 	}
 }
