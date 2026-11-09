@@ -1,0 +1,199 @@
+# Eval runner on Kubernetes: Postgres, Redis, one coordinator, a horizontally
+# scaled worker pool, two stateless apiserver replicas behind a Service, and
+# the Next.js dashboard. Images are built locally and loaded into the cluster
+# (see the k8s job in .github/workflows/ci.yml).
+#
+#   kubectl apply -f deploy/k8s/evalrunner.yaml
+#   kubectl -n evalrunner scale deploy/worker --replicas=8
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: evalrunner
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres
+  namespace: evalrunner
+stringData:
+  POSTGRES_USER: eval
+  POSTGRES_PASSWORD: eval
+  POSTGRES_DB: eval
+  EVALRUNNER_DSN: postgres://eval:eval@postgres:5432/eval?sslmode=disable
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: evalrunner
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: postgres}}
+  template:
+    metadata: {labels: {app: postgres}}
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          envFrom: [{secretRef: {name: postgres}}]
+          ports: [{containerPort: 5432}]
+          readinessProbe:
+            exec: {command: ["pg_isready", "-U", "eval"]}
+            periodSeconds: 2
+          volumeMounts: [{name: data, mountPath: /var/lib/postgresql/data}]
+      volumes:
+        - name: data
+          emptyDir: {} # demo cluster; use a PersistentVolumeClaim for anything real
+---
+apiVersion: v1
+kind: Service
+metadata: {name: postgres, namespace: evalrunner}
+spec:
+  selector: {app: postgres}
+  ports: [{port: 5432}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: redis, namespace: evalrunner}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: redis}}
+  template:
+    metadata: {labels: {app: redis}}
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          args: ["--save", "", "--appendonly", "no"] # cache only, nothing to persist
+          ports: [{containerPort: 6379}]
+          readinessProbe:
+            exec: {command: ["redis-cli", "ping"]}
+            periodSeconds: 2
+---
+apiVersion: v1
+kind: Service
+metadata: {name: redis, namespace: evalrunner}
+spec:
+  selector: {app: redis}
+  ports: [{port: 6379}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: coordinator, namespace: evalrunner}
+spec:
+  replicas: 1 # long-poll wake-ups are in-process; see README "Limits"
+  selector: {matchLabels: {app: coordinator}}
+  template:
+    metadata:
+      labels: {app: coordinator}
+      annotations: {prometheus.io/scrape: "true", prometheus.io/port: "9090"}
+    spec:
+      containers:
+        - name: coordinator
+          image: go-eval-runner:dev
+          imagePullPolicy: IfNotPresent
+          command: ["coordinator"]
+          env:
+            - name: EVALRUNNER_DSN
+              valueFrom: {secretKeyRef: {name: postgres, key: EVALRUNNER_DSN}}
+          ports: [{containerPort: 7070, name: grpc}, {containerPort: 9090, name: metrics}]
+          readinessProbe:
+            httpGet: {path: /healthz, port: metrics}
+            periodSeconds: 2
+          resources:
+            requests: {cpu: 100m, memory: 64Mi}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: coordinator, namespace: evalrunner}
+spec:
+  selector: {app: coordinator}
+  ports: [{name: grpc, port: 7070}, {name: metrics, port: 9090}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: worker, namespace: evalrunner}
+spec:
+  replicas: 3
+  selector: {matchLabels: {app: worker}}
+  template:
+    metadata:
+      labels: {app: worker}
+      annotations: {prometheus.io/scrape: "true", prometheus.io/port: "9091"}
+    spec:
+      terminationGracePeriodSeconds: 20 # in-flight leases expire and requeue if a pod dies
+      containers:
+        - name: worker
+          image: go-eval-runner:dev
+          imagePullPolicy: IfNotPresent
+          command: ["worker", "-concurrency", "16"]
+          env:
+            - {name: EVALRUNNER_COORDINATOR, value: "coordinator:7070"}
+            - name: EVALRUNNER_WORKER_ID
+              valueFrom: {fieldRef: {fieldPath: metadata.name}}
+          ports: [{containerPort: 9091, name: metrics}]
+          resources:
+            requests: {cpu: 100m, memory: 64Mi}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: apiserver, namespace: evalrunner}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: apiserver}}
+  template:
+    metadata:
+      labels: {app: apiserver}
+      annotations: {prometheus.io/scrape: "true", prometheus.io/port: "9092"}
+    spec:
+      containers:
+        - name: apiserver
+          image: go-eval-runner:dev
+          imagePullPolicy: IfNotPresent
+          command: ["apiserver"]
+          env:
+            - name: EVALRUNNER_DSN
+              valueFrom: {secretKeyRef: {name: postgres, key: EVALRUNNER_DSN}}
+            - {name: EVALRUNNER_COORDINATOR, value: "coordinator:7070"}
+            - {name: EVALRUNNER_REDIS, value: "redis:6379"}
+            - {name: EVALRUNNER_ORIGINS, value: "localhost:3000"}
+          ports: [{containerPort: 8080, name: http}, {containerPort: 9092, name: metrics}]
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 2
+          resources:
+            requests: {cpu: 100m, memory: 64Mi}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: apiserver, namespace: evalrunner}
+spec:
+  selector: {app: apiserver} # load-balances across replicas
+  ports: [{name: http, port: 8080}, {name: metrics, port: 9092}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: web, namespace: evalrunner}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: web}}
+  template:
+    metadata: {labels: {app: web}}
+    spec:
+      containers:
+        - name: web
+          image: evalrunner-web:dev
+          imagePullPolicy: IfNotPresent
+          env:
+            - {name: API_URL, value: "http://apiserver:8080"} # server-side rendering
+          ports: [{containerPort: 3000, name: http}]
+          readinessProbe:
+            httpGet: {path: /, port: http}
+            periodSeconds: 3
+---
+apiVersion: v1
+kind: Service
+metadata: {name: web, namespace: evalrunner}
+spec:
+  selector: {app: web}
+  ports: [{name: http, port: 3000}]

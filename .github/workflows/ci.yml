@@ -16,6 +16,9 @@ jobs:
         ports: ["5432:5432"]
         options: >-
           --health-cmd "pg_isready -U eval" --health-interval 2s --health-retries 30
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -26,4 +29,49 @@ jobs:
       - run: go test -race -count=1 ./...
         env:
           EVALRUNNER_TEST_DSN: postgres://eval:eval@localhost:5432/evaltest?sslmode=disable
+          EVALRUNNER_TEST_REDIS: localhost:6379
       - run: docker build -t go-eval-runner:ci .
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: npm run build
+
+  k8s:
+    runs-on: ubuntu-latest
+    needs: [test, web]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build images
+        run: |
+          docker build -t go-eval-runner:dev .
+          docker build -t evalrunner-web:dev web
+      - uses: helm/kind-action@v1
+        with:
+          cluster_name: evalrunner
+      - name: Load images into kind
+        run: |
+          kind load docker-image go-eval-runner:dev --name evalrunner
+          kind load docker-image evalrunner-web:dev --name evalrunner
+      - name: Deploy
+        run: kubectl apply -f deploy/k8s/evalrunner.yaml
+      - name: Smoke test through the cluster
+        run: deploy/k8s/smoke.sh
+      - name: Dump state on failure
+        if: failure()
+        run: |
+          kubectl -n evalrunner get pods -o wide
+          kubectl -n evalrunner describe pods | tail -n 200
+          kubectl -n evalrunner logs deploy/coordinator --tail=100 || true
+          kubectl -n evalrunner logs deploy/apiserver --tail=100 || true

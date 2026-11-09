@@ -56,6 +56,41 @@ Caveats worth knowing. The scaling scenario is latency-bound, so 8 workers fit o
 
 **Batched reporting.** Workers send results through one reporter goroutine per worker; whatever finished while the previous RPC was in flight goes out together in one `ReportResults` call. The coordinator applies a batch with `unnest()`-driven `UPDATE` and `INSERT` CTEs: a fixed number of statements and one commit whatever the batch size. This is the change behind the 3.1x scheduler ceiling above. `-batch-reports=false` keeps the one-RPC-per-job path for comparison.
 
+## Dashboard and HTTP API
+
+![Live run in the dashboard](docs/dashboard-live.png)
+
+`cmd/apiserver` is a stateless HTTP service in front of the same Postgres:
+
+| Endpoint | What it does |
+|---|---|
+| `GET /api/runs` | Recent runs with status counts |
+| `POST /api/runs` | Submit a suite as JSON; forwarded to the coordinator over gRPC |
+| `GET /api/runs/{id}` | Full stats for one run |
+| `GET /api/runs/{id}/ws` | WebSocket stream of the run's stats, pushed every 500 ms until it finishes |
+
+Run stats are an aggregate over every job and attempt in the run, so a big live run costs hundreds of milliseconds per computation. With `-redis` set, replicas share a Redis cache with stale-while-revalidate: entries carry a freshness deadline (250 ms for live runs, an hour once finished), stale copies keep being served, and one caller across all replicas recomputes under a Redis `SET NX` lock, so a burst of viewers never stampedes Postgres. If Redis is down, reads fall back to Postgres.
+
+`web/` is a Next.js 16 / React 19 dashboard in TypeScript: a server-rendered run list refreshed from the REST API, a form that launches mock suites, and a run page fed by the WebSocket stream.
+
+```bash
+./bin/apiserver -redis localhost:6379 &              # :8080, metrics :9092
+cd web && npm ci && npm run dev                      # http://localhost:3000
+```
+
+Measured on one 4 vCPU host against a live 50,000-job run, two apiserver replicas ([`bench/api/RESULTS.md`](bench/api/RESULTS.md), `cmd/apiload`):
+
+| | Postgres only | Redis, stale-while-revalidate |
+|---|---:|---:|
+| GET /api/runs/{id}, 64 clients: requests/s | 104 | 18,537 |
+| p50 / p99 latency | 606 / 990 ms | 2.7 / 13.8 ms |
+| Postgres stats queries/s | 104 | 5.4 |
+| 1,000 WebSocket viewers: updates delivered of 40,000 | 577 | 40,000 |
+
+### Kubernetes
+
+[`deploy/k8s/evalrunner.yaml`](deploy/k8s/evalrunner.yaml) runs Postgres, Redis, the coordinator, a worker Deployment (scale with `kubectl scale`), two apiserver replicas behind a Service, and the dashboard. CI builds both images, starts a kind cluster, deploys, and runs [`deploy/k8s/smoke.sh`](deploy/k8s/smoke.sh): a Job submits 2,000 cases, then the script reads the run back through the load-balanced apiserver Service and the dashboard, and prints how many attempts each worker pod ran.
+
 ## The job interface
 
 Any eval plugs in through the `exec` executor. The run config names the command:
@@ -156,7 +191,10 @@ internal/cachekey/     canonical JSON and cache keys
 internal/metrics/      Prometheus collectors
 internal/e2e/          end-to-end tests against Postgres
 cmd/                   coordinator, worker, evalctl, evalbench
-deploy/                Docker Compose and Prometheus config
+internal/api/          REST + WebSocket handlers, Redis stats cache
+cmd/                   also apiserver (HTTP) and apiload (HTTP/WebSocket load generator)
+web/                   Next.js dashboard
+deploy/                Docker Compose, Prometheus config, Kubernetes manifests and smoke test
 bench/                 suite script, run records, generated RESULTS.md
 ```
 
@@ -173,4 +211,6 @@ Every number below is from the logged runs above (synthetic evals on one 4 vCPU 
 
 - Built a distributed eval runner in Go (gRPC, Postgres, Docker, Prometheus) with SKIP LOCKED job leasing, fenced lease renewal, and exponential-backoff retries; scaled from 1 to 8 workers at 93% linear efficiency (3.4k to 25k jobs/min) with p95 scheduling overhead under 5 ms.
 - Added a content-addressed result cache with in-flight dedup so identical reruns made 0 eval calls and a rerun with 10% of cases changed skipped 90.5% of calls; recovered all 8,000 jobs after SIGKILLing a worker mid-run.
+- Built a Next.js/React dashboard on a REST and WebSocket API with a Redis stale-while-revalidate cache, raising stats reads from 104 to 18.5k requests/s (p50 606 ms to 2.7 ms) and cutting Postgres load 19x.
+- Deployed the coordinator, autoscalable workers, and replicated API servers on Kubernetes, verified end to end in CI on a kind cluster.
 - Raised scheduler throughput 3.1x (157k to 492k jobs/min, median of 3) after pprof showed the coordinator waiting on per-statement Postgres round trips, by replacing per-job result writes with set-based batched transactions.
