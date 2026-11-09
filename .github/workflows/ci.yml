@@ -57,9 +57,23 @@ jobs:
         run: |
           docker build -t go-eval-runner:dev .
           docker build -t evalrunner-web:dev web
-      - uses: helm/kind-action@v1
-        with:
-          cluster_name: evalrunner
+      # Pinned kind install with checksum verification and download retries.
+      # helm/kind-action failed once fetching the checksum file, which left no
+      # cluster behind.
+      - name: Install kind
+        env:
+          KIND_VERSION: v0.31.0
+          KIND_SHA256: eb244cbafcc157dff60cf68693c14c9a75c4e6e6fedaf9cd71c58117cb93e3fa
+        run: |
+          curl -fsSL --retry 5 --retry-all-errors -o kind \
+            "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/kind-linux-amd64"
+          echo "${KIND_SHA256}  kind" | sha256sum -c -
+          sudo install -m 0755 kind /usr/local/bin/kind
+          kind version
+      - name: Create cluster
+        run: |
+          kind create cluster --name evalrunner --wait 120s
+          kubectl cluster-info
       - name: Load images into kind
         run: |
           kind load docker-image go-eval-runner:dev --name evalrunner
