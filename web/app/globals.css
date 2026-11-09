@@ -1,0 +1,38 @@
+:root {
+  --bg: #0b0d10;
+  --panel: #12161b;
+  --line: #222a33;
+  --text: #e6e9ee;
+  --muted: #8a94a3;
+  --ok: #3fb950;
+  --cached: #58a6ff;
+  --fail: #f85149;
+  --pending: #d29922;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, sans-serif; }
+main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 18px; margin: 0 0 16px; }
+h2 { font-size: 14px; color: var(--muted); font-weight: 600; margin: 24px 0 8px; text-transform: uppercase; letter-spacing: .04em; }
+a { color: var(--cached); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { color: var(--muted); font-weight: 500; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--line); min-width: 120px; }
+.bar > span { display: block; height: 100%; }
+.ok { background: var(--ok); } .cached { background: var(--cached); } .fail { background: var(--fail); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+.stat .k { color: var(--muted); font-size: 12px; } .stat .v { font-size: 20px; font-variant-numeric: tabular-nums; }
+form { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+label { display: flex; flex-direction: column; gap: 4px; color: var(--muted); font-size: 12px; }
+input { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; width: 120px; }
+button { background: var(--cached); color: #0b0d10; border: 0; border-radius: 6px; padding: 7px 14px; font-weight: 600; cursor: pointer; }
+button:disabled { opacity: .5; cursor: default; }
+.err { color: var(--fail); }
+.badge { font-size: 12px; padding: 1px 8px; border-radius: 10px; border: 1px solid var(--line); }
+.scroll { overflow-x: auto; }

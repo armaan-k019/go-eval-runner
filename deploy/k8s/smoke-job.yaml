@@ -1,0 +1,20 @@
+# Submits 2,000 mock cases through the coordinator and waits for the run.
+apiVersion: batch/v1
+kind: Job
+metadata: {name: smoke, namespace: evalrunner}
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: evalctl
+          image: go-eval-runner:dev
+          imagePullPolicy: IfNotPresent
+          env: [{name: EVALRUNNER_COORDINATOR, value: "coordinator:7070"}]
+          command: ["sh", "-c"]
+          args:
+            - >-
+              evalctl gen-mock -n 2000 -unique 1500 > /tmp/cases.jsonl &&
+              evalctl submit -suite k8s-smoke -type mock -config '{"latency_median_ms":50}'
+              -cases /tmp/cases.jsonl -wait

@@ -8,30 +8,30 @@ import (
 // RunStats is everything the report and benchmark harness need about a run,
 // computed in SQL from the jobs and attempts tables.
 type RunStats struct {
-	RunID            string
-	Suite            string
-	Total            int64
-	Queued           int64
-	Leased           int64
-	Waiting          int64
-	Succeeded        int64
-	Cached           int64
-	Failed           int64
-	Retries          int64
-	LeaseExpirations int64
-	ExecutorCalls    int64
-	WallSeconds      float64
-	JobsPerMinute    float64
-	AttemptP50MS     float64
-	AttemptP95MS     float64
-	AttemptP99MS     float64
-	ExecP50MS        float64
-	ExecP95MS        float64
-	OverheadP50MS    float64
-	OverheadP95MS    float64
-	MeanScore        float64
-	PassRate         float64
-	CacheSaved       float64
+	RunID            string  `json:"run_id"`
+	Suite            string  `json:"suite"`
+	Total            int64   `json:"total"`
+	Queued           int64   `json:"queued"`
+	Leased           int64   `json:"leased"`
+	Waiting          int64   `json:"waiting"`
+	Succeeded        int64   `json:"succeeded"`
+	Cached           int64   `json:"cached"`
+	Failed           int64   `json:"failed"`
+	Retries          int64   `json:"retries"`
+	LeaseExpirations int64   `json:"lease_expirations"`
+	ExecutorCalls    int64   `json:"executor_calls"`
+	WallSeconds      float64 `json:"wall_seconds"`
+	JobsPerMinute    float64 `json:"jobs_per_minute"`
+	AttemptP50MS     float64 `json:"attempt_p50_ms"`
+	AttemptP95MS     float64 `json:"attempt_p95_ms"`
+	AttemptP99MS     float64 `json:"attempt_p99_ms"`
+	ExecP50MS        float64 `json:"exec_p50_ms"`
+	ExecP95MS        float64 `json:"exec_p95_ms"`
+	OverheadP50MS    float64 `json:"overhead_p50_ms"`
+	OverheadP95MS    float64 `json:"overhead_p95_ms"`
+	MeanScore        float64 `json:"mean_score"`
+	PassRate         float64 `json:"pass_rate"`
+	CacheSaved       float64 `json:"cache_saved"`
 }
 
 func (r RunStats) Done() bool { return r.Queued+r.Leased+r.Waiting == 0 }
@@ -111,4 +111,49 @@ func (s *Store) RunStats(ctx context.Context, runID string) (RunStats, error) {
 		}
 	}
 	return st, nil
+}
+
+// RunSummary is one row of the run list: identity plus status counts, cheap
+// enough to compute for many runs in one query.
+type RunSummary struct {
+	RunID     string    `json:"run_id"`
+	Suite     string    `json:"suite"`
+	JobType   string    `json:"job_type"`
+	CreatedAt time.Time `json:"created_at"`
+	Total     int64     `json:"total"`
+	Pending   int64     `json:"pending"`
+	Succeeded int64     `json:"succeeded"`
+	Cached    int64     `json:"cached"`
+	Failed    int64     `json:"failed"`
+}
+
+// ListRuns returns the most recent runs, newest first.
+func (s *Store) ListRuns(ctx context.Context, limit int) ([]RunSummary, error) {
+	if limit <= 0 || limit > 500 {
+		limit = 50
+	}
+	rows, err := s.pool.Query(ctx, `
+		SELECT r.id::text, r.suite, r.job_type, r.created_at,
+		       count(j.id),
+		       count(*) FILTER (WHERE j.status IN ('queued','leased','waiting')),
+		       count(*) FILTER (WHERE j.status='succeeded'),
+		       count(*) FILTER (WHERE j.status='cached'),
+		       count(*) FILTER (WHERE j.status='failed')
+		FROM (SELECT * FROM runs ORDER BY created_at DESC LIMIT $1) r
+		LEFT JOIN jobs j ON j.run_id = r.id
+		GROUP BY r.id, r.suite, r.job_type, r.created_at
+		ORDER BY r.created_at DESC`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []RunSummary{}
+	for rows.Next() {
+		var r RunSummary
+		if err := rows.Scan(&r.RunID, &r.Suite, &r.JobType, &r.CreatedAt, &r.Total, &r.Pending, &r.Succeeded, &r.Cached, &r.Failed); err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
 }
